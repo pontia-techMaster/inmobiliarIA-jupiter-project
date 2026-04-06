@@ -1,0 +1,58 @@
+# This workflow performs manual checks for the project, including linting, formatting, testing, and Docker config validation.
+# It is triggered manually via workflow_dispatch.
+# name: Manual Checks
+
+# Trigger: Manual dispatch only
+# on:
+#   workflow_dispatch:
+
+# Define the jobs for this workflow
+# jobs:
+#   # Job name: manual
+#   manual:
+#     # Run on Ubuntu latest
+#     runs-on: ubuntu-latest
+
+#     # Steps to execute
+#     steps:
+#       # Step 1: Checkout the repository code
+#       - name: Checkout
+#         uses: actions/checkout@v6
+
+#       # Step 2: Set up Python using the version specified in .python-version file
+#       - name: Set up Python from .python-version
+#         uses: actions/setup-python@v6
+#         with:
+#           python-version-file: ".python-version"
+
+#       # Step 3: Install uv package manager with caching enabled
+#       - name: Set up uv
+#         uses: astral-sh/setup-uv@v7
+#         with:
+#           version: "0.10.6"
+#           enable-cache: true
+
+#       # Step 4: Sync project dependencies including development dependencies
+#       - name: Sync dependencies
+#         run: uv sync --dev
+
+#       # Step 5: Run linting checks using ruff
+#       - name: Run lint
+#         run: uv run ruff check .
+
+#       # Step 6: Check code formatting without making changes
+#       - name: Run format check
+#         run: uv run ruff format --check .
+
+#       # Step 7: Run Django tests with local settings
+#       - name: Run tests
+#         env:
+#           DJANGO_SETTINGS_MODULE: config.settings.local
+#           SECRET_KEY: test-secret-key
+#           DEBUG: "1"
+#           ALLOWED_HOSTS: 127.0.0.1,localhost
+#         run: uv run python manage.py test
+
+#       # Step 8: Validate Docker Compose configuration
+#       - name: Docker config check
+#         run: docker compose config
