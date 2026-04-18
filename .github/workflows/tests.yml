@@ -28,7 +28,7 @@ jobs:
         run: uv sync --dev
 
       - name: Run Unit Tests
-        run: uv run pytest . -v --tb=short -r fEsxXw --cov=. --cov-report=term-missing
+        run: uv run pytest . viviendas_data/scrapper/tests/ -v --tb=short -r fEsxXw --cov=. --cov-report=term-missing
 
       - name: Test Summary
         if: always()
