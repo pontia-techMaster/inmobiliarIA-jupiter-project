@@ -19,13 +19,13 @@ class PropertyData:
     """Data class to hold property extracted information."""
 
     id: Optional[str] = None
-    price: Optional[str] = None
+    price: Optional[int] = None
     property_type: Optional[str] = None  # 'apartment' or 'house'
     property_subtype: Optional[str] = None  # 'flat', 'duplex', 'penthouse', etc.
     street: Optional[str] = None
     neighborhood: Optional[str] = None
     district: Optional[str] = None
-    surface: Optional[str] = None  # m2
+    surface: Optional[int] = None  # m2
     rooms: Optional[int] = None
     bathrooms: Optional[int] = None
     description: Optional[str] = None
@@ -121,15 +121,27 @@ class PropertyExtractor:
 
         return ", ".join(parts) if parts else None
 
-    def _extract_price(self) -> Optional[str]:
+    def _extract_price(self) -> Optional[int]:
         price_element = self.soup.select_one(".info-data .info-data-price")
+        price_text = None
+        
         if price_element:
-            return price_element.get_text(" ", strip=True)
+            price_text = price_element.get_text(" ", strip=True)
+        else:
+            price_container = self.soup.select_one(".info-data")
+            if price_container:
+                price_text = price_container.get_text(" ", strip=True)
 
-        price_container = self.soup.select_one(".info-data")
-        if price_container:
-            return price_container.get_text(" ", strip=True)
+        if not price_text:
+            return None
 
+        price_text = price_text.replace("€", "").replace(" ", "").replace(".", "").strip()
+        
+        price_digits = "".join(filter(str.isdigit, price_text))
+        
+        if price_digits:
+            return int(price_digits)
+        
         return None
 
     def _extract_property_type_and_subtype(self) -> Tuple[Optional[str], Optional[str]]:
@@ -181,11 +193,23 @@ class PropertyExtractor:
 
     def _extract_neighborhood(self) -> Optional[str]:
         parts = self._extract_location_parts()
-        return parts[1] if len(parts) > 1 else None
+        if len(parts) > 1:
+            neighborhood = parts[1]
+            # Remove "Barrio " prefix if present
+            if neighborhood.startswith("Barrio "):
+                neighborhood = neighborhood[7:]  # Remove "Barrio " (7 characters)
+            return neighborhood
+        return None
 
     def _extract_district(self) -> Optional[str]:
         parts = self._extract_location_parts()
-        return parts[2] if len(parts) > 2 else None
+        if len(parts) > 2:
+            district = parts[2]
+            # Remove "Distrito " prefix if present
+            if district.startswith("Distrito "):
+                district = district[9:]  # Remove "Distrito " (9 characters)
+            return district
+        return None
 
     def _extract_feature_texts(self) -> List[str]:
         selectors = [
@@ -216,11 +240,12 @@ class PropertyExtractor:
 
         return []
 
-    def _extract_surface(self) -> Optional[str]:
+    def _extract_surface(self) -> Optional[int]:
         for text in self._extract_feature_texts():
             match = re.search(r"(\d+(?:[.,]\d+)?)\s*m²", text.lower())
             if match:
-                return match.group(1).replace(",", ".")
+                surface_str = match.group(1).replace(",", ".")
+                return int(float(surface_str))
 
         return None
 
@@ -419,10 +444,10 @@ class BatchExtractor:
             if result:
                 self.results.append(result)
                 if verbose:
-                    print("✓")
+                    print("[OK]")
             else:
                 if verbose:
-                    print("✗")
+                    print("[ERROR]")
 
         if verbose:
             print("=" * 60)
@@ -448,7 +473,7 @@ class BatchExtractor:
             json.dump(output_data, f, indent=2, ensure_ascii=False)
 
         if verbose:
-            print(f"\n✓ Results saved to: {self.output_file}")
+            print(f"\n[SUCCESS] Results saved to: {self.output_file}")
             print(f"  - {len(self.results)} properties extracted")
             if self.errors:
                 print(f"  - {len(self.errors)} errors (see metadata.errors in JSON)")
