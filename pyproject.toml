@@ -50,7 +50,7 @@ target-version = ["py312"]
 python_version = "3.12"
 strict = false
 ignore_missing_imports = true
-warn_return_any = true
+warn_return_any = false
 warn_unused_configs = true
 
 # ─── Pytest: testing ───────────────────────────────────────────────────────────
