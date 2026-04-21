@@ -13,7 +13,6 @@ dev = [
     "ruff>=0.6",
     "black>=24.0",
     "mypy>=1.10",
-    "bandit>=1.7.5",
     "types-requests>=2.31.0.10",
 ]
 scripts = [

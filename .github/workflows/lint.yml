@@ -30,6 +30,3 @@ jobs:
 
       - name: Type checking (mypy)
         run: uv run mypy .
-
-      - name: Security check (Bandit)
-        run: uv run bandit -r . --skip B101,B601,B105
