@@ -1,0 +1,21 @@
+{
+  "editor.formatOnSave": true,
+
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    }
+  },
+
+  "black-formatter.importStrategy": "fromEnvironment",
+  "black-formatter.path": ["uv", "run", "black"],
+
+  "ruff.nativeServer": "on",
+  "ruff.fixAll": true,
+  "ruff.organizeImports": true,
+
+  "mypy-type-checker.importStrategy": "fromEnvironment",
+  "mypy-type-checker.reportingScope": "workspace"
+}
