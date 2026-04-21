@@ -1,7 +1,8 @@
 {
   "properties": [
     {
-      "id": "16dce34b-dc23-4660-b71b-6462aa0105c8",
+      "id": "d4aa979c-92df-4897-8ae9-aac9065e0472",
+      "idealista_id": 111005693,
       "price": 780000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -44,10 +45,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f7/48/2a/1422338012.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/fa/37/62/1422338138.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/111005693/",
       "source_file": "arganzuela\\1.html"
     },
     {
-      "id": "f24f025b-4fa1-472b-8199-61a3ae1a8a0a",
+      "id": "922a06ac-7604-4771-948c-491e2296ee3d",
+      "idealista_id": 110169833,
       "price": 650000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -82,10 +85,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/e0/03/49/1397390046.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/e1/6b/85/1397390057.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110169833/",
       "source_file": "arganzuela\\2.html"
     },
     {
-      "id": "14c8d562-450d-4bde-b9fd-f531ce090259",
+      "id": "cfc5f960-14cf-4933-8f0f-74b97eb1559c",
+      "idealista_id": 110733407,
       "price": 539000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -137,16 +142,18 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/fc/cd/ff/1414812635.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/ff/ab/2c/1414812693.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110733407/",
       "source_file": "arganzuela\\3.html"
     },
     {
-      "id": "b2fd5ef1-e7b6-400a-b2a8-1c54c14ec99a",
+      "id": "3b8d7373-b2e6-4dc7-91b0-56708f382aca",
+      "idealista_id": 109683537,
       "price": 1420000,
       "property_type": "house",
       "property_subtype": "chalet",
-      "street": "Barrio Campo de las Naciones-Corralejos",
-      "neighborhood": "Distrito Barajas",
-      "district": "Madrid",
+      "street": null,
+      "neighborhood": "Campo de las Naciones-Corralejos",
+      "district": "Barajas",
       "surface": 410,
       "rooms": 6,
       "bathrooms": 4,
@@ -202,10 +209,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f9/20/bc/1386943072.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/fc/3a/cb/1386943101.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/109683537/",
       "source_file": "barajas\\1.html"
     },
     {
-      "id": "02b61f69-32ad-4345-bdc3-3bf8d99fcde3",
+      "id": "936908d1-ecfc-488e-bfa8-63f85e037024",
+      "idealista_id": 110028077,
       "price": 795500,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -253,16 +262,18 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f2/9d/f1/1393789658.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/fe/c3/8d/1393789561.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110028077/",
       "source_file": "barajas\\2.html"
     },
     {
-      "id": "b220bdee-db3a-47c9-9a91-bf1984db9b98",
+      "id": "d3c63636-f14c-4d87-a9bd-daf51aeb36c1",
+      "idealista_id": 108559393,
       "price": 570000,
       "property_type": "apartment",
       "property_subtype": "flat",
-      "street": "Barrio Alameda de Osuna",
-      "neighborhood": "Distrito Barajas",
-      "district": "Madrid",
+      "street": null,
+      "neighborhood": "Alameda de Osuna",
+      "district": "Barajas",
       "surface": 104,
       "rooms": 2,
       "bathrooms": 2,
@@ -305,10 +316,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f0/22/36/1423488183.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f8/e4/38/1349300324.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/108559393/",
       "source_file": "barajas\\3.html"
     },
     {
-      "id": "06a6885b-5467-4005-bf59-9e9941a8480f",
+      "id": "c908066c-3fa4-4339-a4f9-d9681a3d420a",
+      "idealista_id": 110856845,
       "price": 225000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -341,10 +354,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/df/0e/3e/1421593741.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f0/02/57/1421593780.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110856845/",
       "source_file": "barrio_de_salamanca\\1.html"
     },
     {
-      "id": "05a90f81-546c-4deb-9d3e-121d56e21bf0",
+      "id": "bbe34b93-44a8-4ea3-ba8d-c0e59411f79a",
+      "idealista_id": 103883825,
       "price": 4950000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -412,10 +427,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/ed/9f/1d/1428919795.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/ef/aa/c9/1428919698.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/103883825/",
       "source_file": "barrio_de_salamanca\\2.html"
     },
     {
-      "id": "c6b352fe-1cd5-4277-993e-61b0acd01f41",
+      "id": "0e212528-8df7-4a07-b23f-8a8d12924f47",
+      "idealista_id": 109999723,
       "price": 2100000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -464,10 +481,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/e7/66/09/1392240006.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f1/04/09/1392240010.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/109999723/",
       "source_file": "barrio_de_salamanca\\3.html"
     },
     {
-      "id": "506a8079-ab30-4b5a-8f99-987b86e98f4b",
+      "id": "e25a5b40-16d0-4778-8efb-fee3393d29ac",
+      "idealista_id": 111113983,
       "price": 275000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -522,10 +541,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/e8/85/32/1427109315.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/e9/94/31/1427109309.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/111113983/",
       "source_file": "carabanchel\\1.html"
     },
     {
-      "id": "5c291a03-5f3d-46a0-a8a3-de761b8ca6f3",
+      "id": "e654d30a-ea8a-4e2a-8819-ebda8204567d",
+      "idealista_id": 111110951,
       "price": 295000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -568,16 +589,18 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/e6/b2/36/1425629168.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/ea/f6/6b/1425629165.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/111110951/",
       "source_file": "carabanchel\\2.html"
     },
     {
-      "id": "9c478818-b3f4-4dca-9556-a9da20129af3",
+      "id": "114ddc0c-6f30-47e8-8d6e-08ac68e848f4",
+      "idealista_id": 110414922,
       "price": 365000,
       "property_type": "apartment",
       "property_subtype": "flat",
-      "street": "Barrio Abrantes",
-      "neighborhood": "Distrito Carabanchel",
-      "district": "Madrid",
+      "street": null,
+      "neighborhood": "Abrantes",
+      "district": "Carabanchel",
       "surface": 76,
       "rooms": 3,
       "bathrooms": 1,
@@ -620,10 +643,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f1/2a/73/1407522872.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f1/c2/e2/1407522861.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110414922/",
       "source_file": "carabanchel\\3.html"
     },
     {
-      "id": "252501ea-628f-497d-9e46-c43f2ad7a1f0",
+      "id": "7b055fe4-fc86-409d-9fba-5cc41dd5cb9d",
+      "idealista_id": 110191254,
       "price": 1900000,
       "property_type": "house",
       "property_subtype": "chalet",
@@ -672,16 +697,18 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/e0/ef/80/1399404658.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/e3/01/4c/1399404651.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110191254/",
       "source_file": "chamartin\\1.html"
     },
     {
-      "id": "bfeaa848-a55a-4448-b1cf-29b65335c4bd",
+      "id": "93c212a2-813c-4c0f-9587-7697c627fae7",
+      "idealista_id": 108631169,
       "price": 1300000,
       "property_type": "apartment",
       "property_subtype": "flat",
-      "street": "Barrio Castilla",
-      "neighborhood": "Distrito Chamartín",
-      "district": "Madrid",
+      "street": null,
+      "neighborhood": "Castilla",
+      "district": "Chamartín",
       "surface": 153,
       "rooms": 3,
       "bathrooms": 3,
@@ -724,16 +751,18 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/fb/76/79/1352758155.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/fd/57/dd/1352758169.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/108631169/",
       "source_file": "chamartin\\2.html"
     },
     {
-      "id": "267ecb9d-8f0c-455a-ab09-4c891411690e",
+      "id": "923b41b1-9522-485d-a7e2-7da716119d1d",
+      "idealista_id": 110584418,
       "price": 535000,
       "property_type": "apartment",
       "property_subtype": "flat",
-      "street": "Barrio Bernabéu-Hispanoamérica",
-      "neighborhood": "Distrito Chamartín",
-      "district": "Madrid",
+      "street": null,
+      "neighborhood": "Bernabéu-Hispanoamérica",
+      "district": "Chamartín",
       "surface": 48,
       "rooms": 1,
       "bathrooms": 1,
@@ -767,10 +796,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/e1/9b/2a/1410568357.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f9/c1/d7/1410568370.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110584418/",
       "source_file": "chamartin\\3.html"
     },
     {
-      "id": "3d834e02-d196-4026-a720-d3a1db44e2f5",
+      "id": "8c4671c7-424e-45fd-834f-b7a601fa02c2",
+      "idealista_id": 108505570,
       "price": 1950000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -814,10 +845,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/ca/74/cc/1346904878.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/dd/6e/31/1346904881.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/108505570/",
       "source_file": "chamberi\\1.html"
     },
     {
-      "id": "9cda756b-0a4c-400e-89da-2aaba501e406",
+      "id": "46d0bc77-138a-46bf-ac59-1286d2b0ccb8",
+      "idealista_id": 108453824,
       "price": 835000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -852,16 +885,18 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f1/09/58/1380570731.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f6/84/e8/1380570726.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/108453824/",
       "source_file": "chamberi\\2.html"
     },
     {
-      "id": "aceae671-f065-471f-9a77-362ed58943a2",
+      "id": "c4ded0bc-c93f-4faf-9ec6-41c943840daf",
+      "idealista_id": 110906377,
       "price": 215000,
       "property_type": "apartment",
       "property_subtype": "flat",
-      "street": "Barrio Vallehermoso",
-      "neighborhood": "Distrito Chamberí",
-      "district": "Madrid",
+      "street": null,
+      "neighborhood": "Vallehermoso",
+      "district": "Chamberí",
       "surface": 38,
       "rooms": 1,
       "bathrooms": 1,
@@ -885,10 +920,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/e4/92/0d/1421125332.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f7/12/65/1421125369.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110906377/",
       "source_file": "chamberi\\3.html"
     },
     {
-      "id": "b44beb2a-0631-43e8-b48c-09038f4d3584",
+      "id": "f961c94a-446b-485a-84ca-7435c6d6055b",
+      "idealista_id": 107762795,
       "price": 2100000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -952,16 +989,18 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f6/68/42/1323059033.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/ff/50/87/1323058924.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/107762795/",
       "source_file": "ciudad_lineal\\1.html"
     },
     {
-      "id": "73d06e8e-05be-40ed-8fef-6ac9cccb6780",
+      "id": "80665e9d-98b8-4f2a-a7ba-a669fdcc150c",
+      "idealista_id": 110996729,
       "price": 1350000,
       "property_type": "apartment",
       "property_subtype": "flat",
-      "street": "Barrio Concepción",
-      "neighborhood": "Distrito Ciudad Lineal",
-      "district": "Madrid",
+      "street": null,
+      "neighborhood": "Concepción",
+      "district": "Ciudad Lineal",
       "surface": 164,
       "rooms": 4,
       "bathrooms": 3,
@@ -1009,10 +1048,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f8/d8/61/1422608558.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/fe/9e/ac/1422608553.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110996729/",
       "source_file": "ciudad_lineal\\2.html"
     },
     {
-      "id": "fab68732-7543-412c-8e4b-801ce496e5be",
+      "id": "59ff8790-f6ca-4dc6-b419-09a4059945fe",
+      "idealista_id": 109305131,
       "price": 102000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -1042,10 +1083,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/e9/75/cb/1370510442.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/fe/c3/9a/1370510457.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/109305131/",
       "source_file": "ciudad_lineal\\3.html"
     },
     {
-      "id": "567a7ca5-1396-4ffa-b430-971d0ef35743",
+      "id": "ab26f17e-563e-4639-af8e-d18327e435d2",
+      "idealista_id": 110690367,
       "price": 895000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -1098,10 +1141,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/ea/6f/33/1414553067.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/ff/73/9e/1414553051.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110690367/",
       "source_file": "fuencarral\\1.html"
     },
     {
-      "id": "d308aa77-655d-425a-89f3-dd68847da337",
+      "id": "db8be567-d077-4b77-96fe-bc20c727190f",
+      "idealista_id": 110992277,
       "price": 680000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -1143,16 +1188,18 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f0/db/f4/1421920856.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/fa/f7/3c/1421920841.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110992277/",
       "source_file": "fuencarral\\2.html"
     },
     {
-      "id": "1f49b5a9-391d-4b79-a42c-be864d400758",
+      "id": "c3e00d45-03fa-47bc-aec4-046cc514eec2",
+      "idealista_id": 110675825,
       "price": 1090000,
       "property_type": "apartment",
       "property_subtype": "flat",
-      "street": "Barrio Peñagrande",
-      "neighborhood": "Distrito Fuencarral",
-      "district": "Madrid",
+      "street": null,
+      "neighborhood": "Peñagrande",
+      "district": "Fuencarral",
       "surface": 249,
       "rooms": 3,
       "bathrooms": 2,
@@ -1182,16 +1229,18 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/e8/fc/a6/1412041298.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/ef/6e/2c/1412041331.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110675825/",
       "source_file": "fuencarral\\3.html"
     },
     {
-      "id": "26a738ba-143b-4de2-9772-f27fc894bf4d",
+      "id": "77a9b34b-ef63-4dd9-b93e-bd198826f11b",
+      "idealista_id": 111180473,
       "price": 225000,
       "property_type": "apartment",
       "property_subtype": "flat",
-      "street": "Barrio Apóstol Santiago",
-      "neighborhood": "Distrito Hortaleza",
-      "district": "Madrid",
+      "street": null,
+      "neighborhood": "Apóstol Santiago",
+      "district": "Hortaleza",
       "surface": 71,
       "rooms": 3,
       "bathrooms": 1,
@@ -1234,16 +1283,18 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f6/80/9e/1428143906.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/fa/fc/6a/1428143943.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/111180473/",
       "source_file": "hortaleza\\1.html"
     },
     {
-      "id": "f71df76b-b1e2-4c09-82bf-d4fc750d74ae",
+      "id": "530feafe-c71a-4288-966e-c295d44d0e79",
+      "idealista_id": 111130175,
       "price": 2590000,
       "property_type": "house",
       "property_subtype": "chalet",
-      "street": "Barrio Conde Orgaz-Piovera",
-      "neighborhood": "Distrito Hortaleza",
-      "district": "Madrid",
+      "street": null,
+      "neighborhood": "Conde Orgaz-Piovera",
+      "district": "Hortaleza",
       "surface": 492,
       "rooms": 5,
       "bathrooms": 5,
@@ -1282,16 +1333,18 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/ef/8d/65/1426229447.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f4/c9/7a/1426312340.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/111130175/",
       "source_file": "hortaleza\\2.html"
     },
     {
-      "id": "d37b910d-605a-43d0-a143-2304e45c74f6",
+      "id": "17382470-c50a-4f8b-85c4-f0c585894966",
+      "idealista_id": 110620813,
       "price": 2990000,
       "property_type": "house",
       "property_subtype": "chalet",
-      "street": "Barrio Conde Orgaz-Piovera",
-      "neighborhood": "Distrito Hortaleza",
-      "district": "Madrid",
+      "street": null,
+      "neighborhood": "Conde Orgaz-Piovera",
+      "district": "Hortaleza",
       "surface": 321,
       "rooms": 6,
       "bathrooms": 6,
@@ -1381,16 +1434,18 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f6/e0/1d/1412075562.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/fd/75/f6/1411783408.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110620813/",
       "source_file": "hortaleza\\3.html"
     },
     {
-      "id": "678293ae-447c-41ec-9b09-1aac00c27f09",
+      "id": "c60f241b-0c2d-4d73-8b6e-49382dd17315",
+      "idealista_id": 110756448,
       "price": 399000,
       "property_type": "apartment",
       "property_subtype": "flat",
-      "street": "Barrio Los Cármenes",
-      "neighborhood": "Distrito Latina",
-      "district": "Madrid",
+      "street": null,
+      "neighborhood": "Los Cármenes",
+      "district": "Latina",
       "surface": 72,
       "rooms": 2,
       "bathrooms": 1,
@@ -1434,16 +1489,18 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/e0/e3/f1/1417565334.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/e8/2d/d5/1417565465.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110756448/",
       "source_file": "latina\\1.html"
     },
     {
-      "id": "873d2c1d-1a99-46af-a0da-838e7e1aa8e7",
+      "id": "f219fee7-b501-4dc3-959e-d10713bc8999",
+      "idealista_id": 111200962,
       "price": 439000,
       "property_type": "apartment",
       "property_subtype": "flat",
-      "street": "Barrio Puerta del Ángel",
-      "neighborhood": "Distrito Latina",
-      "district": "Madrid",
+      "street": null,
+      "neighborhood": "Puerta del Ángel",
+      "district": "Latina",
       "surface": 73,
       "rooms": 2,
       "bathrooms": 2,
@@ -1466,16 +1523,18 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/d3/50/3d/1428855768.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/fb/d9/f0/1428855761.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/111200962/",
       "source_file": "latina\\2.html"
     },
     {
-      "id": "733af78a-bc6f-4b00-9768-2335508f0e35",
+      "id": "13fdb339-9fc2-4119-aec5-e714fb8097e2",
+      "idealista_id": 110154090,
       "price": 290000,
       "property_type": "apartment",
       "property_subtype": "flat",
-      "street": "Barrio Los Cármenes",
-      "neighborhood": "Distrito Latina",
-      "district": "Madrid",
+      "street": null,
+      "neighborhood": "Los Cármenes",
+      "district": "Latina",
       "surface": 95,
       "rooms": 3,
       "bathrooms": 1,
@@ -1518,16 +1577,18 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/e9/a8/30/1396879687.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/ed/09/56/1396879671.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110154090/",
       "source_file": "latina\\3.html"
     },
     {
-      "id": "689d87ad-3d12-47ba-951f-b487331bd80f",
+      "id": "4cdfdc53-5c6e-4610-8593-feba795fbe43",
+      "idealista_id": 109923239,
       "price": 2560000,
       "property_type": "apartment",
       "property_subtype": "flat",
-      "street": "Barrio Aravaca",
-      "neighborhood": "Distrito Moncloa",
-      "district": "Madrid",
+      "street": null,
+      "neighborhood": "Aravaca",
+      "district": "Moncloa",
       "surface": 265,
       "rooms": 5,
       "bathrooms": 5,
@@ -1585,16 +1646,18 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f8/c4/cb/1389770559.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/fa/2d/1b/1389770543.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/109923239/",
       "source_file": "moncloa\\1.html"
     },
     {
-      "id": "1ad960c0-f44a-49e7-aa82-ed9df98c6778",
+      "id": "64d99ded-96c1-4a4d-973f-37d8f6c25d18",
+      "idealista_id": 110670750,
       "price": 2550000,
       "property_type": "house",
       "property_subtype": "chalet",
-      "street": "Barrio Valdemarín",
-      "neighborhood": "Distrito Moncloa",
-      "district": "Madrid",
+      "street": null,
+      "neighborhood": "Valdemarín",
+      "district": "Moncloa",
       "surface": 380,
       "rooms": 4,
       "bathrooms": 5,
@@ -1661,16 +1724,18 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f6/f9/2b/1426426531.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f8/f7/33/1426426568.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110670750/",
       "source_file": "moncloa\\2.html"
     },
     {
-      "id": "94b3be2f-41bd-429d-9515-1b1a4ad39f84",
+      "id": "d31e1879-d4fa-422b-9e77-4dbb8c18c83b",
+      "idealista_id": 111195053,
       "price": 640000,
       "property_type": "apartment",
       "property_subtype": "flat",
-      "street": "Barrio Argüelles",
-      "neighborhood": "Distrito Moncloa",
-      "district": "Madrid",
+      "street": null,
+      "neighborhood": "Argüelles",
+      "district": "Moncloa",
       "surface": 68,
       "rooms": 2,
       "bathrooms": 2,
@@ -1702,10 +1767,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f7/86/4f/1428650882.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/ff/e8/68/1428650893.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/111195053/",
       "source_file": "moncloa\\3.html"
     },
     {
-      "id": "74c53037-7135-4862-923c-6d079b717021",
+      "id": "95703e84-816e-4bae-b2e8-7a147de3add1",
+      "idealista_id": 110997483,
       "price": 300000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -1738,10 +1805,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f1/6d/75/1428262027.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f8/0a/6b/1428261994.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110997483/",
       "source_file": "moratalaz\\1.html"
     },
     {
-      "id": "d29dd530-2ab7-4bed-9a2c-176de945b0f1",
+      "id": "574b8ac8-2d56-4795-9b8b-2bcd1d108cfc",
+      "idealista_id": 110687135,
       "price": 235000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -1791,10 +1860,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f4/18/ea/1412372866.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/fd/0c/64/1412372886.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110687135/",
       "source_file": "moratalaz\\2.html"
     },
     {
-      "id": "e1e9afba-9af9-41d7-95c2-69a122ef8ff7",
+      "id": "fe0814f1-09bb-41bb-90b3-e506c086121b",
+      "idealista_id": 111203595,
       "price": 260000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -1814,10 +1885,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/dc/83/32/1428944658.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/ed/6a/bb/1428944637.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/111203595/",
       "source_file": "moratalaz\\3.html"
     },
     {
-      "id": "b43b1b8e-11d7-43d5-8ec3-d917cd136cc5",
+      "id": "df6327b1-bc6d-4bf1-bf0e-394f2fbdc8a1",
+      "idealista_id": 111120673,
       "price": 435000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -1862,16 +1935,18 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f4/7c/41/1425945276.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f4/ca/d3/1425946964.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/111120673/",
       "source_file": "moratalaz\\4.html"
     },
     {
-      "id": "4b4f6cea-726f-4e02-9fb5-84df99e49756",
+      "id": "50662f33-ce19-4940-90b4-af93d05648eb",
+      "idealista_id": 110996279,
       "price": 409900,
       "property_type": "apartment",
       "property_subtype": "flat",
-      "street": "Barrio Palomeras Bajas",
-      "neighborhood": "Distrito Puente de Vallecas",
-      "district": "Madrid",
+      "street": null,
+      "neighborhood": "Palomeras Bajas",
+      "district": "Puente de Vallecas",
       "surface": 147,
       "rooms": 4,
       "bathrooms": 2,
@@ -1920,10 +1995,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/fa/e3/c0/1422672480.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/fd/89/de/1422672589.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110996279/",
       "source_file": "puente_de_vallecas\\1.html"
     },
     {
-      "id": "d7c97521-9e99-4215-a6f6-c54990f39190",
+      "id": "0164a226-fa73-4fc5-b017-f59ad5a9cfaa",
+      "idealista_id": 110416369,
       "price": 205000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -1960,10 +2037,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f0/4d/05/1404479907.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/fb/79/01/1406225536.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110416369/",
       "source_file": "puente_de_vallecas\\2.html"
     },
     {
-      "id": "8f611256-8d28-4df1-a631-2d965700bcb8",
+      "id": "8d7fa18b-cd83-479b-9ce6-8a9a15ae60f2",
+      "idealista_id": 110830384,
       "price": 208000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -1999,16 +2078,18 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/af/ea/ee/1416846381.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/c5/3d/36/1416846376.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110830384/",
       "source_file": "puente_de_vallecas\\3.html"
     },
     {
-      "id": "6fa7e654-3d7c-465b-bbe1-329fc7af3b71",
+      "id": "239e9f6c-0ba5-4932-ba25-cbebe8ee431a",
+      "idealista_id": 110069207,
       "price": 695000,
       "property_type": "apartment",
       "property_subtype": "flat",
-      "street": "Barrio Rosas",
-      "neighborhood": "Distrito San Blas",
-      "district": "Madrid",
+      "street": null,
+      "neighborhood": "Rosas",
+      "district": "San Blas",
       "surface": 138,
       "rooms": 4,
       "bathrooms": 2,
@@ -2053,16 +2134,18 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/fa/31/aa/1395580650.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/fe/77/3e/1395631567.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110069207/",
       "source_file": "san_blas\\1.html"
     },
     {
-      "id": "8045766c-d3c4-4f9c-8e15-0a9fe8b2b879",
+      "id": "f2d16c7b-4ac4-4191-9dc4-fb941c3f9b48",
+      "idealista_id": 110657165,
       "price": 1180000,
       "property_type": "apartment",
       "property_subtype": "flat",
-      "street": "Barrio Rosas",
-      "neighborhood": "Distrito San Blas",
-      "district": "Madrid",
+      "street": null,
+      "neighborhood": "Rosas",
+      "district": "San Blas",
       "surface": 151,
       "rooms": 4,
       "bathrooms": 2,
@@ -2116,16 +2199,18 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f7/86/89/1412607504.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/fa/23/9f/1412607506.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110657165/",
       "source_file": "san_blas\\2.html"
     },
     {
-      "id": "2f68e978-2f22-467b-97ea-8dfa74f83a9d",
+      "id": "ea0c32d7-6c2a-4021-bbd8-5c17f824fe0b",
+      "idealista_id": 110772061,
       "price": 1600000,
       "property_type": "house",
       "property_subtype": "chalet",
-      "street": "Barrio Salvador",
-      "neighborhood": "Distrito San Blas",
-      "district": "Madrid",
+      "street": null,
+      "neighborhood": "Salvador",
+      "district": "San Blas",
       "surface": 294,
       "rooms": 4,
       "bathrooms": 4,
@@ -2178,10 +2263,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f3/6a/32/1415366972.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/fc/cb/f7/1415367008.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110772061/",
       "source_file": "san_blas\\3.html"
     },
     {
-      "id": "8afc459a-2f52-4ba5-aa2b-070208046141",
+      "id": "fde1860e-eecf-475f-96d2-8d24d6cbce8e",
+      "idealista_id": 110112243,
       "price": 659900,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -2232,10 +2319,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f7/0e/9a/1401808896.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f9/71/d5/1401808984.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110112243/",
       "source_file": "usera\\1.html"
     },
     {
-      "id": "aa7e6a82-a938-4ad6-aad6-a8ca02ffe63f",
+      "id": "645ca81e-8288-4dc8-8743-77b2d119e3c6",
+      "idealista_id": 111032950,
       "price": 379000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -2276,10 +2365,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f7/d7/a6/1423223770.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f9/ef/c5/1423223774.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/111032950/",
       "source_file": "usera\\2.html"
     },
     {
-      "id": "558d2100-e130-4ac7-aeff-1e986fbbbab2",
+      "id": "194329aa-0da1-4f87-8787-4e9fa8930663",
+      "idealista_id": 110611373,
       "price": 220000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -2320,10 +2411,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/e2/04/27/1410126869.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/e3/57/fb/1410126873.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110611373/",
       "source_file": "usera\\3.html"
     },
     {
-      "id": "8498453e-cbf1-4b04-8d46-045e0ec78244",
+      "id": "8001df8c-b843-460a-9add-977167ca868e",
+      "idealista_id": 110855593,
       "price": 195000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -2375,10 +2468,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f0/26/61/1417600413.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f9/fb/d4/1417600418.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110855593/",
       "source_file": "villaverde\\1.html"
     },
     {
-      "id": "00dea8a9-2a3b-41b1-accf-25c1e403878b",
+      "id": "7f4019de-a524-4a70-9ca5-67534aa051c5",
+      "idealista_id": 111123968,
       "price": 370000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -2426,10 +2521,12 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f5/ac/8c/1426041563.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f6/f0/1e/1426041628.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/111123968/",
       "source_file": "villaverde\\2.html"
     },
     {
-      "id": "8d2c8bd4-fa63-4296-bac0-fc0a35818f8c",
+      "id": "77bbc7a2-1ec7-41ff-98ad-c9889625db76",
+      "idealista_id": 110943002,
       "price": 319000,
       "property_type": "apartment",
       "property_subtype": "flat",
@@ -2501,6 +2598,7 @@
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f5/cb/71/1420382876.webp",
         "https://img4.idealista.com/blur/WEB_DETAIL/0/id.pro.es.image.master/f8/a8/dd/1428438843.webp"
       ],
+      "url": "https://www.idealista.com/inmueble/110943002/",
       "source_file": "villaverde\\3.html"
     }
   ],
