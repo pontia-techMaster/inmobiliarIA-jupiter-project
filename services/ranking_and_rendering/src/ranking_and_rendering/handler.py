@@ -13,10 +13,7 @@ log = logging.getLogger("ranking_and_rendering.handler")
 
 
 def handle(job: RankJob) -> SearchResponse:
-    results = [
-        {"id": doc_id, "title": f"Piso {doc_id}", "score": 0.9 - i * 0.1}
-        for i, doc_id in enumerate(job.doc_ids)
-    ]
+    results = [{"id": doc_id, "title": f"Piso {doc_id}", "score": 0.9 - i * 0.1} for i, doc_id in enumerate(job.doc_ids)]
     log.info(
         "stub handler: request_id=%s doc_ids=%s filters=%s → %d results",
         job.request_id,

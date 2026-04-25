@@ -44,7 +44,7 @@ def publish(queue_name: str, message: BaseModel) -> None:
     log.info("→ publish %s %s", queue_name, message.model_dump_json())
 
 
-def consume(queue_name: str, model_cls: type[M]) -> Iterator[M]:
+def consume(queue_name: str, model_cls: type[M]) -> Iterator[M]:  # noqa: UP047
     url = _queue_url(queue_name)
     client = _client()
     log.info("⟲ consume %s starting (long-poll)", queue_name)

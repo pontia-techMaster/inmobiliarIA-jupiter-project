@@ -16,7 +16,6 @@ import uuid
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-
 from shared.schemas import SearchRequest
 from shared.settings import settings
 from shared.sqs import publish
