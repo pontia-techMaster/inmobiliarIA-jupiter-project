@@ -1,0 +1,120 @@
+name: inmobiliaria
+
+services:
+  elasticmq:
+    image: softwaremill/elasticmq-native:1.5.7
+    container_name: elasticmq
+    ports:
+      - "9324:9324"
+      - "9325:9325"
+    volumes:
+      - ./elasticmq/elasticmq.conf:/opt/elasticmq.conf:ro
+    networks:
+      - inmo
+
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    container_name: qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant-data:/qdrant/storage
+    networks:
+      - inmo
+
+  dynamodb:
+    image: amazon/dynamodb-local:2.5.3
+    container_name: dynamodb
+    command: -jar DynamoDBLocal.jar -sharedDb -dbPath /data
+    ports:
+      - "8001:8000"
+    volumes:
+      - dynamodb-data:/data
+    networks:
+      - inmo
+
+  api_gateway:
+    build:
+      context: ..
+      dockerfile: services/api_gateway/Dockerfile
+    container_name: api_gateway
+    environment:
+      - SQS_ENDPOINT_URL=http://elasticmq:9324
+      - QDRANT_URL=http://qdrant:6333
+      - DYNAMODB_ENDPOINT_URL=http://dynamodb:8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - elasticmq
+    restart: on-failure
+    networks:
+      - inmo
+
+  process_user_prompt:
+    build:
+      context: ..
+      dockerfile: services/process_user_prompt/Dockerfile
+    container_name: process_user_prompt
+    environment:
+      - SQS_ENDPOINT_URL=http://elasticmq:9324
+    depends_on:
+      - elasticmq
+    restart: on-failure
+    networks:
+      - inmo
+
+  vector_query:
+    build:
+      context: ..
+      dockerfile: services/vector_query/Dockerfile
+    container_name: vector_query
+    environment:
+      - SQS_ENDPOINT_URL=http://elasticmq:9324
+      - QDRANT_URL=http://qdrant:6333
+    depends_on:
+      - elasticmq
+      - qdrant
+    restart: on-failure
+    networks:
+      - inmo
+
+  ranking_and_rendering:
+    build:
+      context: ..
+      dockerfile: services/ranking_and_rendering/Dockerfile
+    container_name: ranking_and_rendering
+    environment:
+      - SQS_ENDPOINT_URL=http://elasticmq:9324
+      - QDRANT_URL=http://qdrant:6333
+    depends_on:
+      - elasticmq
+      - qdrant
+    restart: on-failure
+    networks:
+      - inmo
+
+  data_ingestion:
+    build:
+      context: ..
+      dockerfile: services/data_ingestion/Dockerfile
+    container_name: data_ingestion
+    environment:
+      - SQS_ENDPOINT_URL=http://elasticmq:9324
+      - QDRANT_URL=http://qdrant:6333
+    volumes:
+      - ../data/source_html:/data/html:ro
+    depends_on:
+      - elasticmq
+      - qdrant
+    restart: on-failure
+    networks:
+      - inmo
+
+networks:
+  inmo:
+    driver: bridge
+
+volumes:
+  qdrant-data:
+  dynamodb-data:

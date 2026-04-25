@@ -3,7 +3,13 @@ name = "inmobiliarIA"
 version = "1.0.0"
 description = "Property scraper and FastAPI application for real estate data"
 requires-python = ">=3.10"
-dependencies = ["pydantic>=2.13.3", "python-dotenv>=1.2.2"]
+dependencies = ["pydantic>=2.13.3", "python-dotenv>=1.2.2", "shared"]
+
+[tool.uv.workspace]
+members = ["shared", "services/*"]
+
+[tool.uv.sources]
+shared = { workspace = true }
 
 [dependency-groups]
 dev = [
