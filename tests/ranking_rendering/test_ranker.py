@@ -1,6 +1,7 @@
 import sys
 from unittest.mock import patch
 
+
 sys.path.append("services/ranking_and_rendering/src")
 
 # ruff: noqa: E402
