@@ -1,8 +1,8 @@
 from unittest.mock import patch
-
+import sys
+sys.path.append("services/ranking_and_rendering/src")
 from ranking_and_rendering.handler import handle
 from shared.schemas import RankJob
-
 
 # harcode data fot teszt mock
 def test_ranking_and_rendering_service():
