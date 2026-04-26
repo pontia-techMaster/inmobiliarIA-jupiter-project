@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     queue_ingest_jobs: str = "ingest-jobs"
 
     qdrant_url: str = "http://localhost:6333"
+    qdrant_collection_name: str = "properties"
+    """LO SUYO SERIA PONERLO PARA QUE NO SE PUEDA CONFIGURAR DESDE FUERA,
+    PERO LO DEJO POR SI QUIERO PROBAR CON OTRA COLECCIÓN EN QDRANT"""
     dynamodb_endpoint_url: str = "http://localhost:8001"
 
 
