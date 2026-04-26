@@ -1,8 +1,12 @@
-from unittest.mock import patch
 import sys
+from unittest.mock import patch
+
 sys.path.append("services/ranking_and_rendering/src")
+
+# ruff: noqa: E402
 from ranking_and_rendering.handler import handle
 from shared.schemas import RankJob
+
 
 # harcode data fot teszt mock
 def test_ranking_and_rendering_service():
