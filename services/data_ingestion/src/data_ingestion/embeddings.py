@@ -1,5 +1,10 @@
-"""Embedding generation for ingested documents.
+from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
 
-Intentionally empty. Will wrap the model call that turns a normalized
-property description into a vector for insertion into Qdrant.
-"""
+EMBEDDINGS_MODEL_NAME = "gemini-embedding-001"
+EMBEDDINGS_DIMENSIONALITY = 768
+
+_model = GoogleGenerativeAIEmbeddings(model=EMBEDDINGS_MODEL_NAME, output_dimensionality=EMBEDDINGS_DIMENSIONALITY)
+
+
+def embed_texts(texts: list[str]):
+    return _model.embed_documents(texts, task_type="retrieval_document", batch_size=10)
