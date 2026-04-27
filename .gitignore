@@ -36,6 +36,7 @@ Thumbs.db
 htmlcov/
 .tox/
 .mypy_cache/
+.ruff_cache
 
 # =========================
 # Build / packaging
@@ -53,5 +54,4 @@ dist/
 
 
 .claude
-.vscode
 .idea
