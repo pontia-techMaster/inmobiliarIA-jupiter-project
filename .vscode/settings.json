@@ -17,5 +17,9 @@
   "ruff.organizeImports": true,
 
   "mypy-type-checker.importStrategy": "fromEnvironment",
-  "mypy-type-checker.reportingScope": "workspace"
+  "mypy-type-checker.reportingScope": "workspace",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/shared",
+    "${workspaceFolder}/services/*"
+  ]
 }
