@@ -7,7 +7,7 @@ the request that produced it.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -20,11 +20,32 @@ class SearchRequest(BaseModel):
     user_id: str | None = None
 
 
+FieldStrength = Literal["soft", "hard"]
+
+FieldName = Literal[
+    "property_type",
+    "price",
+    "surface",
+    "rooms",
+    "bathrooms",
+    "is_exterior",
+    "has_elevator",
+    "location",
+]
+
+
+class PromptField(BaseModel):
+    name: FieldName = Field(..., description="Field name from the allowed ones")
+    value: list[str] = Field(..., description="Possible values for the field")
+    strength: FieldStrength = Field(..., description="Field strength")
+    extraction_context: str = Field(..., description="Text fragment where field and its value are extracted from")
+
+
 class PromptFields(BaseModel):
     """Structured fields extracted from the natural-language prompt by ``process_user_prompt``."""
 
-    request_id: str
-    fields: dict[str, Any] = Field(default_factory=dict)
+    fields: list[PromptField] = Field(default_factory=list, description="List of fields")
+    extra_info: str = Field(..., description="Descriptive subjective information to be embedded")
 
 
 class QueryJob(BaseModel):
