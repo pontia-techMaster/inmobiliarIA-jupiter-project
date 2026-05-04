@@ -18,4 +18,3 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/api_gateway"]
-ranking_and_rendering = { workspace = true }

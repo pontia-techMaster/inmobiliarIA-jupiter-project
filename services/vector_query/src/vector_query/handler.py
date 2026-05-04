@@ -1,4 +1,4 @@
-"""Orchestrates a single ``PromptFields → RankJob`` transform.
+"""Orchestrates a single ``ProcessUserPromptResponse → RankJob`` transform.
 
 Steps:
 
@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 
-from shared.schemas import PromptFields, RankJob
+from shared.schemas import ProcessUserPromptResponse, RankJob
 from shared.settings import settings
 
 from vector_query.embeddings import embed_query
@@ -22,7 +22,7 @@ from vector_query.qdrant_client import search
 log = logging.getLogger("vector_query.handler")
 
 
-def handle(job: PromptFields) -> RankJob:
+def handle(job: ProcessUserPromptResponse) -> RankJob:
     vector = embed_query(job.prompt)
     qfilter = build_filter(job.fields)
     hits = search(vector, qfilter, k=settings.top_k)

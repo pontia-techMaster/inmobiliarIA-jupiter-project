@@ -1,9 +1,11 @@
+from pathlib import Path
+
 from langchain_core.messages import SystemMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-SYSTEM_PROMPT_FILE_PATH = "./generate-summary-prompt.md"
+SYSTEM_PROMPT_FILE_PATH = str(Path(__file__).parent / "generate-summary-prompt.md")
 LLM_MODEL_NAME = "gemini-3.1-flash-lite-preview"
 
 

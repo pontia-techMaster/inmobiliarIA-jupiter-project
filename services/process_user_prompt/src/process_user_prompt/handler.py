@@ -1,4 +1,4 @@
-"""Stub handler: returns hardcoded ``PromptFields`` regardless of the input prompt.
+"""Stub handler: returns hardcoded ``ProcessUserPromptResponse`` regardless of the input prompt.
 
 Real implementation will call ``llm`` with a prompt-extraction system
 message and parse the structured response..
@@ -7,7 +7,7 @@ message and parse the structured response..
 import logging
 
 from dotenv import load_dotenv
-from shared.schemas import PromptFields, SearchRequest
+from shared.schemas import ProcessUserPromptResponse, SearchRequest
 
 from .llm import extract_data
 
@@ -16,11 +16,13 @@ load_dotenv()
 logger = logging.getLogger("process_user_prompt.handler")
 
 
-def handle(req: SearchRequest) -> PromptFields:
+def handle(req: SearchRequest) -> ProcessUserPromptResponse:
     logger.info("User prompt extraction initilized!")
     data = extract_data(user_input=req.prompt)
-    logger.debug("Data extracted from user prompt:", data.model_dump(mode="json"))
+    response_data = ProcessUserPromptResponse(prompt=req.prompt, request_id = req.request_id, **data.model_dump(mode="json"))
+    logger.info("Data extracted from user prompt:", response_data.model_dump(mode="json"))
     logger.info("User prompt extraction finished")
+    return response_data
 
 
 if __name__ == "__main__":

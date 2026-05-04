@@ -81,6 +81,21 @@ Current Needs:
 - `search-responses` — `ranking_and_rendering` → Frontend
 - `ingest-jobs`      — Scheduled task → `data_ingestion`
 
+## Local-only services
+
+These exist in `docker-compose` for development ergonomics and are **not
+deployed to cloud** — their cloud equivalents are managed AWS services.
+
+- **`tracer`** (port 9000) — follows `docker logs` of every container in
+  the compose project, indexes lines by `request_id`, and serves a
+  small UI + JSON API at `GET /trace/{request_id}`. Mounts the Docker
+  socket (privileged). In cloud the equivalent is CloudWatch Logs
+  Insights with a query filter on `request_id`; the same `/trace/{id}`
+  endpoint shape can wrap that query so the frontend "Ver traza →"
+  link keeps working.
+- **`frontend`** runs the Vite dev server locally. In cloud the built
+  artifacts live in S3 + CloudFront.
+
 ## Diagrams
 
 ### Local (Docker Compose)

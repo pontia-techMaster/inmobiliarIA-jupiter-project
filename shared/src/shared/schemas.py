@@ -41,11 +41,22 @@ class PromptField(BaseModel):
     extraction_context: str = Field(..., description="Text fragment where field and its value are extracted from")
 
 
-class PromptFields(BaseModel):
+class ProcessUserPromptResponse(BaseModel):
     """Structured fields extracted from the natural-language prompt by ``process_user_prompt``."""
 
     fields: list[PromptField] = Field(default_factory=list, description="List of fields")
     extra_info: str = Field(..., description="Descriptive subjective information to be embedded")
+    request_id: str = Field(..., description="Correlates the whole search chain")
+    prompt: str
+
+
+class ProcessUserPromptOutput(BaseModel):
+    """Structured fields extracted from the natural-language prompt by ``process_user_prompt``."""
+
+    fields: list[PromptField] = Field(default_factory=list, description="List of fields")
+    extra_info: str = Field(..., description="Descriptive subjective information to be embedded")
+
+
 
 
 class QueryJob(BaseModel):

@@ -23,7 +23,14 @@ from qdrant_client.models import FieldCondition, Filter, MatchValue, Range
 
 log = logging.getLogger("vector_query.filters")
 
-_EXACT = ("district", "neighborhood", "property_type", "property_subtype")
+"property_type",
+"price",
+"surface",
+"rooms",
+"bathrooms",
+
+
+_EXACT = ( "property_type", "is_exterior", "has_elevator", "location")
 _RANGES = {
     "price": ("min_price", "max_price"),
     "rooms": ("min_rooms", "max_rooms"),
@@ -32,21 +39,24 @@ _RANGES = {
 _KNOWN = set(_EXACT) | {k for pair in _RANGES.values() for k in pair}
 
 
-def build(fields: dict[str, Any]) -> Filter | None:
+def build(fields: list[dict]) -> Filter | None:
     """Return a Qdrant ``Filter``, or ``None`` if no recognised filter fields are present."""
 
     must: list[FieldCondition] = []
 
-    for key in _EXACT:
-        value = fields.get(key)
-        if value is not None:
-            must.append(FieldCondition(key=key, match=MatchValue(value=value)))
-
-    for payload_key, (min_key, max_key) in _RANGES.items():
-        lo = fields.get(min_key)
-        hi = fields.get(max_key)
-        if lo is not None or hi is not None:
-            must.append(FieldCondition(key=payload_key, range=Range(gte=lo, lte=hi)))
+    for field in fields:
+        value = field.get('value')
+        key_name = field.get('name')
+        if key_name in _EXACT:
+            if value is not None:
+                must.append(FieldCondition(key=key_name, match=MatchValue(value=value)))
+            continue
+        if key_name in _RANGES:
+            for payload_key, (min_key, max_key) in _RANGES.items():
+                lo = fields.get(min_key)
+                hi = fields.get(max_key)
+                if lo is not None or hi is not None:
+                    must.append(FieldCondition(key=payload_key, range=Range(gte=lo, lte=hi)))
 
     unknown = [k for k in fields if k not in _KNOWN]
     if unknown:
