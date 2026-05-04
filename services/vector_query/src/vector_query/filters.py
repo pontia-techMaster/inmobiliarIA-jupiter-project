@@ -17,20 +17,13 @@ Qdrant must use these same field names.
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from qdrant_client.models import FieldCondition, Filter, MatchValue, Range
 
 log = logging.getLogger("vector_query.filters")
 
-"property_type",
-"price",
-"surface",
-"rooms",
-"bathrooms",
 
-
-_EXACT = ( "property_type", "is_exterior", "has_elevator", "location")
+_EXACT = ("property_type", "is_exterior", "has_elevator", "location")
 _RANGES = {
     "price": ("min_price", "max_price"),
     "rooms": ("min_rooms", "max_rooms"),
@@ -45,8 +38,8 @@ def build(fields: list[dict]) -> Filter | None:
     must: list[FieldCondition] = []
 
     for field in fields:
-        value = field.get('value')
-        key_name = field.get('name')
+        value = field.get("value")
+        key_name = field.get("name")
         if key_name in _EXACT:
             if value is not None:
                 must.append(FieldCondition(key=key_name, match=MatchValue(value=value)))

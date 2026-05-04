@@ -12,7 +12,6 @@ from functools import lru_cache
 
 from qdrant_client import QdrantClient
 from qdrant_client.models import Filter
-
 from shared.settings import settings
 
 log = logging.getLogger("vector_query.qdrant_client")
@@ -25,11 +24,15 @@ def _client() -> QdrantClient:
 
 
 def search(vector: list[float], qfilter: Filter | None, k: int) -> list[tuple[str, float]]:
-    hits = _client().query_points(
-        collection_name=settings.qdrant_collection,
-        query=vector,
-        query_filter=qfilter,
-        limit=k,
-        with_payload=False,
-    ).points
+    hits = (
+        _client()
+        .query_points(
+            collection_name=settings.qdrant_collection,
+            query=vector,
+            query_filter=qfilter,
+            limit=k,
+            with_payload=False,
+        )
+        .points
+    )
     return [(str(hit.id), float(hit.score)) for hit in hits]

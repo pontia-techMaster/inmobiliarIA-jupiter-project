@@ -12,7 +12,7 @@ import logging
 import re
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import docker
 from docker.errors import NotFound
@@ -45,7 +45,7 @@ def _parse_line(raw: bytes) -> tuple[str, str] | None:
         return None
     ts, sep, msg = text.partition(" ")
     if sep == "":
-        return datetime.now(timezone.utc).isoformat(), text
+        return datetime.now(UTC).isoformat(), text
     return ts, msg
 
 
@@ -85,9 +85,7 @@ class CollectorManager:
         self._discovery: threading.Thread | None = None
 
     def start(self) -> None:
-        self._discovery = threading.Thread(
-            target=self._discover_loop, name="tracer-discovery", daemon=True
-        )
+        self._discovery = threading.Thread(target=self._discover_loop, name="tracer-discovery", daemon=True)
         self._discovery.start()
 
     def stop(self) -> None:
@@ -96,9 +94,7 @@ class CollectorManager:
     def _discover_loop(self) -> None:
         while not self._stop.is_set():
             try:
-                containers = self._client.containers.list(
-                    filters={"label": f"{COMPOSE_PROJECT_LABEL}={self._project}"}
-                )
+                containers = self._client.containers.list(filters={"label": f"{COMPOSE_PROJECT_LABEL}={self._project}"})
                 for c in containers:
                     if c.id in self._followed:
                         continue

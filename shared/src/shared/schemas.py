@@ -57,8 +57,6 @@ class ProcessUserPromptOutput(BaseModel):
     extra_info: str = Field(..., description="Descriptive subjective information to be embedded")
 
 
-
-
 class QueryJob(BaseModel):
     """Message on ``query-jobs``: input for ``vector_query``."""
 

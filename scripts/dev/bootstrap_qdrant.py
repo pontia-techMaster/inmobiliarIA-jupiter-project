@@ -25,12 +25,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from embeddings import embed_documents
 from embeddings.config import DIMENSIONS
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
-
 from shared.settings import settings
+
+from embeddings import embed_documents
 
 ROOT = Path(__file__).resolve().parents[2]
 PARSED = ROOT / "Old" / "data" / "parsed-properties.json"
@@ -47,10 +47,7 @@ def main() -> None:
     # Embed the normalized summary of each property (falling back to its raw
     # description if no summary is available). Same code path data_ingestion
     # will use; respects GEMINI_API_KEY / stub fallback.
-    texts = [
-        descriptions.get(str(p["idealista_id"])) or p.get("description") or ""
-        for p in properties
-    ]
+    texts = [descriptions.get(str(p["idealista_id"])) or p.get("description") or "" for p in properties]
     vectors = embed_documents(texts)
     print(f"embedded {len(vectors)} documents (dim={len(vectors[0])})")
 
