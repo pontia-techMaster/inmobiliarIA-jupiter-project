@@ -1,4 +1,4 @@
-.PHONY: up down logs ps smoke sync post-search peek-search-requests api-dev e2e trigger-ingestion
+.PHONY: up down logs ps smoke sync post-search peek-search-requests api-dev e2e trigger-ingestion bootstrap
 
 sync:
 	uv sync --all-packages
@@ -34,3 +34,6 @@ e2e:
 
 trigger-ingestion:
 	uv run python scripts/dev/trigger_ingestion.py
+
+bootstrap:
+	uv run python scripts/dev/bootstrap_qdrant.py

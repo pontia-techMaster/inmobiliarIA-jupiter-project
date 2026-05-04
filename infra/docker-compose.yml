@@ -72,6 +72,9 @@ services:
     environment:
       - SQS_ENDPOINT_URL=http://elasticmq:9324
       - QDRANT_URL=http://qdrant:6333
+      - QDRANT_COLLECTION=${QDRANT_COLLECTION:-properties}
+      - TOP_K=${TOP_K:-20}
+      - GEMINI_API_KEY=${GEMINI_API_KEY-}
     depends_on:
       - elasticmq
       - qdrant

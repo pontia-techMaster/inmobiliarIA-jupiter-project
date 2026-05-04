@@ -6,6 +6,7 @@ WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
 COPY shared ./shared
+COPY embeddings ./embeddings
 COPY services/vector_query ./services/vector_query
 
 RUN uv sync --package vector_query --frozen --no-dev
