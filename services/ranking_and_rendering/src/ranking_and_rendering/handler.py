@@ -33,6 +33,9 @@ def handle(job: RankJob) -> SearchResponse:
 
     # Retrieve full documents from Qdrant
     docs = get_documents(job.doc_ids)
+
+    log.debug("handle: received %d docs from Qdrant", len(docs))
+
     # Rerank based on filters
     ranked = rank(docs, job.filters)
     # Build the list of results for the frontend
