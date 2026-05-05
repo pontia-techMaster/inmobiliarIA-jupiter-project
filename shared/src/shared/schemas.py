@@ -36,7 +36,7 @@ FieldName = Literal[
 
 class PromptField(BaseModel):
     name: FieldName = Field(..., description="Field name from the allowed ones")
-    value: list[str] = Field(..., description="Possible values for the field")
+    value: list[str | bool | int] = Field(..., description="Possible values for the field")
     strength: FieldStrength = Field(..., description="Field strength")
     extraction_context: str = Field(..., description="Text fragment where field and its value are extracted from")
 
@@ -57,19 +57,12 @@ class ProcessUserPromptOutput(BaseModel):
     extra_info: str = Field(..., description="Descriptive subjective information to be embedded")
 
 
-class QueryJob(BaseModel):
-    """Message on ``query-jobs``: input for ``vector_query``."""
-
-    request_id: str
-    fields: dict[str, Any]
-
-
 class RankJob(BaseModel):
     """Message on ``rank-jobs``: candidate doc ids + filters, input for ``ranking_and_rendering``."""
 
     request_id: str
     doc_ids: list[str]
-    filters: dict[str, Any]
+    fields: list[PromptField] = Field(default_factory=list, description="List of fields")
 
 
 class SearchResponse(BaseModel):
