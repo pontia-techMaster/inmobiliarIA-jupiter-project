@@ -27,7 +27,7 @@ def search(vector: list[float], qfilter: Filter | None, k: int) -> list[tuple[st
     hits = (
         _client()
         .query_points(
-            collection_name=settings.qdrant_collection,
+            collection_name=settings.qdrant_collection_name,
             query=vector,
             query_filter=qfilter,
             limit=k,

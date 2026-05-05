@@ -18,43 +18,53 @@ from __future__ import annotations
 
 import logging
 
-from qdrant_client.models import FieldCondition, Filter, MatchValue, Range
+from qdrant_client.models import Condition, FieldCondition, Filter, MatchAny, MatchValue
+from shared.schemas import PromptField
 
 log = logging.getLogger("vector_query.filters")
 
-
-_EXACT = ("property_type", "is_exterior", "has_elevator", "location")
-_RANGES = {
-    "price": ("min_price", "max_price"),
-    "rooms": ("min_rooms", "max_rooms"),
-    "surface": ("min_surface", "max_surface"),
+_KEY_MATCH_CONDITIONS_MAPPING = {
+    # lte = "lower or equal", gte = "greater or equal"
+    "property_type": "equal",
+    "is_exterior": "equal",
+    "has_elevator": "equal",
+    "location": "equal",
+    "price": "lte",
+    "rooms": "gte",
+    "bathrooms": "gte",
+    "surface": "gte",
 }
-_KNOWN = set(_EXACT) | {k for pair in _RANGES.values() for k in pair}
 
 
-def build(fields: list[dict]) -> Filter | None:
+def build(fields: list[PromptField]) -> Filter | None:
     """Return a Qdrant ``Filter``, or ``None`` if no recognised filter fields are present."""
 
-    must: list[FieldCondition] = []
+    must: list[Condition] = []
 
     for field in fields:
-        value = field.get("value")
-        key_name = field.get("name")
-        if key_name in _EXACT:
-            if value is not None:
-                must.append(FieldCondition(key=key_name, match=MatchValue(value=value)))
-            continue
-        if key_name in _RANGES:
-            for payload_key, (min_key, max_key) in _RANGES.items():
-                lo = fields.get(min_key)
-                hi = fields.get(max_key)
-                if lo is not None or hi is not None:
-                    must.append(FieldCondition(key=payload_key, range=Range(gte=lo, lte=hi)))
+        field_value: list = field.value or []
+        field_name: str = field.name or ""
 
-    unknown = [k for k in fields if k not in _KNOWN]
-    if unknown:
-        log.info("ignoring unknown filter keys: %s", unknown)
+        condition = _KEY_MATCH_CONDITIONS_MAPPING.get(field_name)
+        if not condition:
+            log.info(f"ignoring unknown filter key: {field_name}")
+
+        if condition == "equal":
+            if field_name in {"property_type", "location"}:
+                if len(set(field_value)) == 1:
+                    must.append(FieldCondition(key=field_name, match=MatchValue(value=field_value[0])))
+                else:
+                    must.append(FieldCondition(key=field_name, match=MatchAny(any=field_value)))
+            else:  # is_exterior or has_elevator
+                must.append(FieldCondition(key=field_name, match=MatchValue(value=all(field_value))))
+        elif condition == "lte":
+            must.append(FieldCondition(key=field_name, match=MatchValue(value=max(field_value))))
+        elif condition == "gte":
+            must.append(FieldCondition(key=field_name, match=MatchValue(value=min(field_value))))
+        else:
+            log.info(f"ignoring unknown condition: {condition}")
 
     if not must:
         return None
+
     return Filter(must=must)
