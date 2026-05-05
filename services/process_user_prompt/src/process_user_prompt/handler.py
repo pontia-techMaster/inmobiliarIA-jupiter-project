@@ -28,6 +28,6 @@ def handle(req: SearchRequest) -> ProcessUserPromptResponse:
 if __name__ == "__main__":
     req = SearchRequest(
         request_id="req-1234",
-        prompt="Me es indiferente si es piso o casa, con tal de que tenga jardín y sea en una zona con colegios cerca.",
+        prompt="Me es indiferente si es piso o casa, con tal de que tenga jardín y sea en una zona con colegios cerca. Que cueste como mucho 30000 e imprescindible que tenga ascensor.",
     )
     handle(req)
