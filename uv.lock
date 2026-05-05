@@ -14,7 +14,6 @@ resolution-markers = [
 members = [
     "api-gateway",
     "data-ingestion",
-    "embeddings",
     "inmobiliaria",
     "process-user-prompt",
     "ranking-and-rendering",
@@ -781,17 +780,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/91/9b/4a2ea29aeba624712
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e3/26/57c6fb270950d476074c087527a558ccb6f4436657314bfb6cdf484114c4/docker-7.1.0-py3-none-any.whl", hash = "sha256:c96b93b7f0a746f9e77d325bcfb87422a3d8bd4f03136ae8a85b37f1898d5fc0", size = 147774, upload-time = "2024-05-23T11:13:55.01Z" },
 ]
-
-[[package]]
-name = "embeddings"
-version = "0.1.0"
-source = { editable = "embeddings" }
-dependencies = [
-    { name = "langchain-google-genai" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "langchain-google-genai", specifier = ">=4.2.2" }]
 
 [[package]]
 name = "exceptiongroup"
@@ -2809,6 +2797,9 @@ version = "0.1.0"
 source = { editable = "shared" }
 dependencies = [
     { name = "boto3" },
+    { name = "langchain-community" },
+    { name = "langchain-core" },
+    { name = "langchain-google-genai" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "qdrant-client" },
@@ -2817,6 +2808,9 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "boto3", specifier = ">=1.35.0" },
+    { name = "langchain-community", specifier = ">=0.4.1" },
+    { name = "langchain-core", specifier = ">=1.3.0" },
+    { name = "langchain-google-genai", specifier = ">=4.2.2" },
     { name = "pydantic", specifier = ">=2.13.3" },
     { name = "pydantic-settings", specifier = ">=2.5.0" },
     { name = "qdrant-client", specifier = ">=1.12.0" },
@@ -3160,14 +3154,12 @@ name = "vector-query"
 version = "0.1.0"
 source = { editable = "services/vector_query" }
 dependencies = [
-    { name = "embeddings" },
     { name = "qdrant-client" },
     { name = "shared" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "embeddings", editable = "embeddings" },
     { name = "qdrant-client", specifier = ">=1.12,<2" },
     { name = "shared", editable = "shared" },
 ]

@@ -6,7 +6,7 @@ requires-python = ">=3.10"
 dependencies = ["pydantic>=2.13.3", "python-dotenv>=1.2.2", "shared"]
 
 [tool.uv.workspace]
-members = ["shared", "embeddings", "services/*"]
+members = ["shared", "services/*"]
 exclude = ["services/frontend"]
 
 [tool.uv.sources]
