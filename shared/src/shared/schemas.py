@@ -36,23 +36,25 @@ FieldName = Literal[
 
 class PromptField(BaseModel):
     name: FieldName = Field(..., description="Field name from the allowed ones")
-    value: list[str] = Field(..., description="Possible values for the field")
+    value: list[str | bool | int] = Field(..., description="Possible values for the field")
     strength: FieldStrength = Field(..., description="Field strength")
     extraction_context: str = Field(..., description="Text fragment where field and its value are extracted from")
 
 
-class PromptFields(BaseModel):
+class ProcessUserPromptResponse(BaseModel):
     """Structured fields extracted from the natural-language prompt by ``process_user_prompt``."""
 
     fields: list[PromptField] = Field(default_factory=list, description="List of fields")
     extra_info: str = Field(..., description="Descriptive subjective information to be embedded")
+    request_id: str = Field(..., description="Correlates the whole search chain")
+    prompt: str
 
 
-class QueryJob(BaseModel):
-    """Message on ``query-jobs``: input for ``vector_query``."""
+class ProcessUserPromptOutput(BaseModel):
+    """Structured fields extracted from the natural-language prompt by ``process_user_prompt``."""
 
-    request_id: str
-    fields: dict[str, Any]
+    fields: list[PromptField] = Field(default_factory=list, description="List of fields")
+    extra_info: str = Field(..., description="Descriptive subjective information to be embedded")
 
 
 class RankJob(BaseModel):
@@ -60,7 +62,7 @@ class RankJob(BaseModel):
 
     request_id: str
     doc_ids: list[str]
-    filters: dict[str, Any]
+    fields: list[PromptField] = Field(default_factory=list, description="List of fields")
 
 
 class SearchResponse(BaseModel):

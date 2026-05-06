@@ -3,7 +3,7 @@ name = "vector_query"
 version = "0.1.0"
 description = "SQS worker: builds filters + embeddings, runs similarity search on Qdrant (stubbed)"
 requires-python = ">=3.10"
-dependencies = ["shared"]
+dependencies = ["shared", "qdrant-client>=1.12,<2"]
 
 [tool.uv.sources]
 shared = { workspace = true }

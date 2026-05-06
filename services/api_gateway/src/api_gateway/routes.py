@@ -16,8 +16,7 @@ import uuid
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-from ranking_and_rendering.handler import handle
-from shared.schemas import RankJob, SearchRequest, SearchResponse
+from shared.schemas import SearchRequest
 from shared.settings import settings
 from shared.sqs import publish
 
@@ -54,12 +53,3 @@ def search(body: SearchBody) -> SearchAck:
 @router.get("/users/{user_id}")
 def get_user(user_id: str) -> dict[str, str]:
     return {"user_id": user_id, "stub": "true"}
-
-
-@router.post("/test-ranking", response_model=SearchResponse)
-async def test_ranking(job: RankJob) -> SearchResponse:
-    """
-    Ruta de prueba: recibe IDs de documentos y filtros, ejecuta el ranking
-    y devuelve la respuesta tal y como lo haría el servicio.
-    """
-    return handle(job)

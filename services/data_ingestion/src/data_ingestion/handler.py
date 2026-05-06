@@ -17,7 +17,8 @@ load_dotenv()
 
 logger = logging.getLogger("data_ingestion.handler")
 
-CHECKPOINT_DIR = Path(".checkpoints")
+service_dir = Path(__file__).parent.parent.parent
+CHECKPOINT_DIR = service_dir / ".checkpoints"
 CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
 EXTRACT_CHECKPOINT = CHECKPOINT_DIR / "extract-checkpoint.json"
 NORMALIZE_CHECKPOINT = CHECKPOINT_DIR / "normalize-checkpoint.json"
@@ -79,10 +80,11 @@ def embed_all(descriptions: list[str], force: bool = False) -> list[list[float]]
 def ingest(properties: list[PropertyData], descriptions: list[str], embeddings: list[list[float]]) -> None:
 
     qdrant_client = QdrantClient(url=settings.qdrant_url)
-    qdrant_client.create_collection(
-        collection_name=settings.qdrant_collection_name,
-        vectors_config=VectorParams(size=EMBEDDINGS_DIMENSIONALITY, distance=Distance.COSINE),
-    )
+    if not qdrant_client.collection_exists(collection_name=settings.qdrant_collection_name):
+        qdrant_client.create_collection(
+            collection_name=settings.qdrant_collection_name,
+            vectors_config=VectorParams(size=EMBEDDINGS_DIMENSIONALITY, distance=Distance.COSINE),
+        )
 
     points = [
         PointStruct(
