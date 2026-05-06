@@ -48,6 +48,7 @@ def build(fields: list[PromptField]) -> Filter | None:
         condition = _KEY_MATCH_CONDITIONS_MAPPING.get(field_name)
         if not condition:
             log.info(f"ignoring unknown filter key: {field_name}")
+            continue
 
         if condition == "equal":
             if field_name in {"property_type", "location"}:

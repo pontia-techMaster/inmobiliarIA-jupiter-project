@@ -6,7 +6,6 @@ WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
 COPY shared ./shared
-COPY embeddings ./embeddings
 COPY services/tracer ./services/tracer
 
 RUN uv sync --package tracer --frozen --no-dev
