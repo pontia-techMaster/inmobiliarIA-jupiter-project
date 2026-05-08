@@ -6,11 +6,14 @@ provided by the user. The goal is to prioritize properties that best match
 the search criteria and penalize those that deviate.
 """
 
+import logging
 from typing import Any
 
 from shared.schemas import PromptField
 
 from .ranking_rules import RANKING_RULES
+
+log = logging.getLogger("ranking_and_rendering.ranker")
 
 
 def rank(
@@ -35,6 +38,7 @@ def rank(
     Returns:
       - List of documents sorted from highest to lowest score.
     """
+    log.debug("Ranking %d documents with filters %s", len(documents), filters)
 
     ranked: list[dict[str, Any]] = []
 
@@ -42,9 +46,10 @@ def rank(
 
     for doc in documents:
         score = float(doc.get("score", 1.0))
+        original = score
 
         payload = doc.get("payload", {})
-
+        log.debug("Doc %s initial score: %s", doc.get("id"), original)
         for rule in RANKING_RULES:
             score = rule.apply(
                 score=score,
@@ -56,12 +61,12 @@ def rank(
             **doc,
             "score": score,
         }
-
+        log.debug("Doc %s final score: %s", doc.get("id"), score)
         ranked.append(ranked_doc)
 
     ranked.sort(
         key=lambda document: document["score"],
         reverse=True,
     )
-
+    log.info("Finished ranking %d documents", len(ranked))
     return ranked
