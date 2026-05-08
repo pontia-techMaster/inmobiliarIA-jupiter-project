@@ -52,6 +52,8 @@ docker compose -f infra/docker-compose.yml up -d --build vector_query
 | Servicio           | Puerto host | Uso                         |
 |--------------------|-------------|-----------------------------|
 | api_gateway        | 8000        | API HTTP (FastAPI)          |
+| frontend           | 5173        | UI React (Vite)             |
+| tracer             | 9000        | UI de trazas + JSON         |
 | elasticmq (SQS)    | 9324        | API compatible con SQS      |
 | elasticmq UI       | 9325        | Estadísticas de las colas   |
 | qdrant             | 6333        | API HTTP de Qdrant          |
@@ -184,6 +186,34 @@ http://localhost:9325/statistics/queues
 
 Muestra cuántos mensajes hay en cada cola en tiempo real. Útil para
 confirmar que no hay mensajes atascados ni colas perdidas.
+
+### Opción D: Servicio `tracer`
+
+http://localhost:9000
+
+Servicio **solo para desarrollo local**. Se conecta al socket de Docker
+(`/var/run/docker.sock`) y sigue los logs de todos los contenedores del
+proyecto. Cuando ve un `request_id=<uuid>` en una línea, la indexa en
+memoria.
+
+- **UI**: http://localhost:9000 — lista de trazas recientes a la
+  izquierda, timeline detallado a la derecha. Auto-refresco cada 2 s.
+- **Acceso directo a una traza**: http://localhost:9000/?id=<request_id>
+  (es a donde apunta el enlace "Ver traza →" del frontend tras enviar
+  una búsqueda).
+- **API JSON**:
+  - `GET /traces` — últimas N trazas con metadatos.
+  - `GET /trace/{request_id}` — timeline completo de una petición.
+
+Limitaciones:
+
+- Sólo indexa líneas que contengan `request_id=<uuid>` (ya formateado
+  así por todos los workers).
+- Es un servicio **local**. En cloud el equivalente es CloudWatch Logs
+  Insights con un filtro por `request_id`; el endpoint `/trace/{id}`
+  podrá apuntar a esa consulta sin cambiar el frontend.
+- Mantiene en memoria las últimas 500 peticiones; al reiniciar pierde
+  todo.
 
 ---
 

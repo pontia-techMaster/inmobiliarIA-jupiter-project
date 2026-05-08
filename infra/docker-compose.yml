@@ -58,6 +58,7 @@ services:
     container_name: process_user_prompt
     environment:
       - SQS_ENDPOINT_URL=http://elasticmq:9324
+      - GEMINI_API_KEY=${GEMINI_API_KEY-}
     depends_on:
       - elasticmq
     restart: on-failure
@@ -72,6 +73,9 @@ services:
     environment:
       - SQS_ENDPOINT_URL=http://elasticmq:9324
       - QDRANT_URL=http://qdrant:6333
+      - QDRANT_COLLECTION=${QDRANT_COLLECTION:-properties}
+      - TOP_K=${TOP_K:-20}
+      - GEMINI_API_KEY=${GEMINI_API_KEY-}
     depends_on:
       - elasticmq
       - qdrant
@@ -94,6 +98,38 @@ services:
     networks:
       - inmo
 
+  frontend:
+    build:
+      context: ../services/frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - VITE_TRACER_URL=http://localhost:9000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../services/frontend/src:/app/src
+      - ../services/frontend/index.html:/app/index.html
+    depends_on:
+      - api_gateway
+    restart: on-failure
+    networks:
+      - inmo
+
+  tracer:
+    build:
+      context: ..
+      dockerfile: services/tracer/Dockerfile
+    container_name: tracer
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: on-failure
+    networks:
+      - inmo
+
   data_ingestion:
     build:
       context: ..
@@ -102,6 +138,7 @@ services:
     environment:
       - SQS_ENDPOINT_URL=http://elasticmq:9324
       - QDRANT_URL=http://qdrant:6333
+      - GEMINI_API_KEY=${GEMINI_API_KEY-}
     volumes:
       - ../data/source_html:/data/html:ro
     depends_on:

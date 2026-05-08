@@ -29,7 +29,7 @@ def build_result_item(doc: dict[str, Any]) -> dict[str, Any]:
 def handle(job: RankJob) -> SearchResponse:
     """Orchestrates the retrieval and reranking of documents."""
 
-    log.info("handle: request_id=%s doc_ids=%s filters=%s", job.request_id, job.doc_ids, job.filters)
+    log.info("handle: request_id=%s doc_ids=%s filters=%s", job.request_id, job.doc_ids, job.fields)
 
     # Retrieve full documents from Qdrant
     docs = get_documents(job.doc_ids)
@@ -37,7 +37,7 @@ def handle(job: RankJob) -> SearchResponse:
     log.debug("handle: received %d docs from Qdrant", len(docs))
 
     # Rerank based on filters
-    ranked = rank(docs, job.filters)
+    ranked = rank(docs, job.fields)
     # Build the list of results for the frontend
     results: list[dict[str, Any]] = [build_result_item(doc) for doc in ranked]
 

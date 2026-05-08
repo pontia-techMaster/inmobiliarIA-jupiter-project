@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from shared.schemas import PromptFields
+from shared.schemas import ProcessUserPromptResponse
 from shared.settings import settings
 from shared.sqs import consume, publish
 
@@ -20,7 +20,7 @@ log = logging.getLogger("vector_query.worker")
 
 def main() -> None:
     log.info("vector_query worker starting")
-    for job in consume(settings.queue_query_jobs, PromptFields):
+    for job in consume(settings.queue_query_jobs, ProcessUserPromptResponse):
         out = handle(job)
         publish(settings.queue_rank_jobs, out)
 

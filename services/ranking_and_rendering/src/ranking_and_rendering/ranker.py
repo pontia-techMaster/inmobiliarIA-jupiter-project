@@ -9,6 +9,8 @@ the search criteria and penalize those that deviate.
 import logging
 from typing import Any
 
+from shared.schemas import PromptField
+
 from .ranking_rules import RANKING_RULES
 
 log = logging.getLogger("ranking_and_rendering.ranker")
@@ -16,7 +18,7 @@ log = logging.getLogger("ranking_and_rendering.ranker")
 
 def rank(
     documents: list[dict[str, Any]],
-    filters: dict[str, Any],
+    fields: PromptField,
 ) -> list[dict[str, Any]]:
     """
     Sorts a list of documents using the user's filters.
@@ -26,18 +28,10 @@ def rank(
       - payload: property information.
 
     Supported filters:
-      - city (str): exact city.
-      - max_price (float/int): maximum price.
-      - min_price (float/int): minimum price.
-      - min_rooms (int): minimum number of rooms.
-      - property_type (str): apartment, house, etc.
-      - property_subtype (str): flat, duplex, penthouse, chalet, etc.
-      - neighborhood (str): exact neighborhood.
-      - district (str): exact district.
-      - min_surface (int): minimum surface area in m².
-      - max_surface (int): maximum surface area in m².
-      - min_bathrooms (int): minimum number of bathrooms.
-      - floor (str | list): desired floor. Example: "2" or ["1", "2", "3"].
+      - price (float/int): price.
+      - rooms (int): minimum number of rooms.
+      - property_type (str): apartment or house
+      - location (str): exact neighborhood. **NOT IMPLEMENTED**
       - is_exterior (bool): True for exterior, False for interior.
       - has_elevator (bool): True if elevator is required, False otherwise.
 
@@ -47,6 +41,8 @@ def rank(
     log.debug("Ranking %d documents with filters %s", len(documents), filters)
 
     ranked: list[dict[str, Any]] = []
+
+    _fields = {field.name: field for field in fields}
 
     for doc in documents:
         score = float(doc.get("score", 1.0))
@@ -58,7 +54,7 @@ def rank(
             score = rule.apply(
                 score=score,
                 payload=payload,
-                filters=filters,
+                fields=_fields,
             )
 
         ranked_doc = {

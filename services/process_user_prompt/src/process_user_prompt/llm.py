@@ -4,11 +4,11 @@ from pathlib import Path
 from langchain_core.messages import SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
-from shared.schemas import PromptFields
+from shared.schemas import ProcessUserPromptOutput
 
 logger = logging.getLogger("process_user_prompt.llm")
 
-SYSTEM_PROMPT_PATH = "./system-prompt.md"
+SYSTEM_PROMPT_PATH = str(Path(__file__).parent / "system-prompt.md")
 GEMINI_MODEL_NAME = "gemini-3.1-flash-lite-preview"
 MODEL_TEMPERATURE = 0.2
 
@@ -28,13 +28,13 @@ def _create_chain(model_name: str, temperature: float, system_prompt_path: str):
     )
 
     model = ChatGoogleGenerativeAI(model=model_name, temperature=temperature).with_structured_output(
-        schema=PromptFields, method="json_schema"
+        schema=ProcessUserPromptOutput, method="json_schema"
     )
     chain = prompt_template | model
 
     return chain
 
 
-def extract_data(user_input: str) -> PromptFields:
+def extract_data(user_input: str) -> ProcessUserPromptOutput:
     chain = _create_chain(model_name=GEMINI_MODEL_NAME, temperature=MODEL_TEMPERATURE, system_prompt_path=SYSTEM_PROMPT_PATH)
     return chain.invoke({"user_input": user_input})
