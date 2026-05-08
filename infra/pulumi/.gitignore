@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+Pulumi.*.yaml.bak
+
+# state files when using local backend (only _bootstrap should ever have these)
+.pulumi/
+*.checkpoint.json

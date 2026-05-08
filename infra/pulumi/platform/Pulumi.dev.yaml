@@ -1,0 +1,5 @@
+config:
+  aws:region: eu-west-1
+  aws:profile: inmo
+  platform:services:
+    - process_user_prompt

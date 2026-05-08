@@ -1,0 +1,5 @@
+config:
+  aws:region: eu-west-1
+  aws:profile: inmo
+  api-gateway:cors_allow_origins:
+    - "*"

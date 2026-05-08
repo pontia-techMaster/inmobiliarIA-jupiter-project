@@ -1,0 +1,10 @@
+name: api-gateway
+runtime:
+  name: python
+  options:
+    virtualenv: ../.venv
+    toolchain: uv
+description: |
+  AWS API Gateway HTTP API + SQS service integration. POST /search
+  publishes the request body directly to the search-requests queue —
+  no Lambda hop, no FastAPI container in the cloud path.

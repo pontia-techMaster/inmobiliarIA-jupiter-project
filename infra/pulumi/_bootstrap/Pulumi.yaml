@@ -1,0 +1,14 @@
+name: _bootstrap
+runtime:
+  name: python
+  options:
+    virtualenv: ../.venv
+    toolchain: uv
+description: |
+  Creates the S3 bucket and DynamoDB table that every other stack uses
+  as its remote state backend. Uses the LOCAL backend itself because
+  the bucket doesn't exist yet (chicken-and-egg).
+
+  After `pulumi up`:
+    export PULUMI_BACKEND_URL=s3://$(pulumi stack output state_bucket)?region=$(pulumi stack output region)
+    pulumi login $PULUMI_BACKEND_URL
