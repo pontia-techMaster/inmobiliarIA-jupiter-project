@@ -15,7 +15,11 @@ def get_client() -> QdrantClient:
     """Iniciated the Qdrant client on first call."""
     global _client
     if _client is None:
-        _client = QdrantClient(url=settings.qdrant_url, check_compatibility=False)
+        _client = QdrantClient(
+            url=settings.qdrant_url,
+            api_key=settings.qdrant_api_key or None,
+            check_compatibility=False,
+        )
     return _client
 
 

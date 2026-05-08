@@ -1,0 +1,19 @@
+FROM public.ecr.aws/lambda/python:3.12
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+WORKDIR /tmp/build
+
+# Bring the workspace lockfile + sources for the packages this Lambda needs.
+COPY pyproject.toml uv.lock ./
+COPY shared ./shared
+COPY services/vector_query ./services/vector_query
+
+# Resolve transitive deps from the lockfile, then install everything into
+# LAMBDA_TASK_ROOT (= /var/task) so the Lambda runtime can import them.
+RUN uv export --package vector_query --frozen --no-dev --no-emit-workspace \
+        --format requirements-txt -o /tmp/requirements.txt && \
+    pip install --no-cache-dir --target ${LAMBDA_TASK_ROOT} -r /tmp/requirements.txt && \
+    pip install --no-cache-dir --target ${LAMBDA_TASK_ROOT} --no-deps ./shared ./services/vector_query
+
+CMD ["vector_query.lambda_handler.handler"]

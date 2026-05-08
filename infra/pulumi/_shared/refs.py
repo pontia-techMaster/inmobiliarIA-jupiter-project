@@ -36,11 +36,32 @@ class PlatformRef:
     def log_group_name(self, service: str) -> pulumi.Output[str]:
         return self._r.require_output(f"log_group_{service}_name")
 
+    def log_group_arn(self, service: str) -> pulumi.Output[str]:
+        return self._r.require_output(f"log_group_{service}_arn")
+
     def ssm_gemini_api_key_arn(self) -> pulumi.Output[str]:
         return self._r.require_output("ssm_gemini_api_key_arn")
 
     def ssm_gemini_api_key_name(self) -> pulumi.Output[str]:
         return self._r.require_output("ssm_gemini_api_key_name")
+
+    def ssm_qdrant_api_key_arn(self) -> pulumi.Output[str]:
+        return self._r.require_output("ssm_qdrant_api_key_arn")
+
+    def ssm_qdrant_api_key_name(self) -> pulumi.Output[str]:
+        return self._r.require_output("ssm_qdrant_api_key_name")
+
+    def qdrant_url(self) -> pulumi.Output[str]:
+        return self._r.require_output("qdrant_url")
+
+    def html_bucket_name(self) -> pulumi.Output[str]:
+        return self._r.require_output("html_bucket_name")
+
+    def html_bucket_arn(self) -> pulumi.Output[str]:
+        return self._r.require_output("html_bucket_arn")
+
+    def users_table_arn(self) -> pulumi.Output[str]:
+        return self._r.require_output("users_table_arn")
 
 
 class ApiGatewayRef:

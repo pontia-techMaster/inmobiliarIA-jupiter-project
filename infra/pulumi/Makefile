@@ -1,4 +1,4 @@
-.PHONY: install check-sso state-init up destroy preview outputs login-remote
+.PHONY: install check-sso state-init up destroy preview outputs login-remote deploy-all prompt-secrets
 
 # Force the AWS SDK credential chain to use the `inmo` profile for every
 # target in this Makefile. Belt-and-suspenders with `aws:profile: inmo`
@@ -68,3 +68,45 @@ destroy: check-sso
 outputs:
 	@test -n "$(STACK)" || (echo "usage: make outputs STACK=<dir>"; exit 1)
 	cd $(STACK) && pulumi stack output --json --stack dev
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Full deploy in dependency order. Prompts for secret values only if their
+# SSM parameter is still the placeholder. Skips parameters already set.
+# Re-runnable — Pulumi diffs each stack and no-ops if nothing changed.
+# ──────────────────────────────────────────────────────────────────────────────
+DEPLOY_ORDER = platform api-gateway process-user-prompt vector-query ranking-and-rendering data-ingestion frontend
+
+deploy-all: check-sso
+	@echo "▶ deploying platform (foundation: queues, ECR, log groups, SSM placeholders)"
+	@cd platform && pulumi up --stack dev --yes
+	@$(MAKE) -s prompt-secrets
+	@for stack in api-gateway process-user-prompt vector-query ranking-and-rendering data-ingestion frontend; do \
+		echo "" ; \
+		echo "▶ deploying $$stack" ; \
+		(cd $$stack && pulumi up --stack dev --yes) || (echo "❌ $$stack failed"; exit 1) ; \
+	done
+	@echo ""
+	@echo "✅ All stacks deployed."
+	@echo ""
+	@echo "Frontend URL:"
+	@cd frontend && pulumi stack output url --stack dev 2>/dev/null || echo "  (not available)"
+	@echo "API Gateway endpoint:"
+	@cd api-gateway && pulumi stack output endpoint --stack dev 2>/dev/null || echo "  (not available)"
+
+# Prompt for any SSM SecureString that's still REPLACE_ME. Hides input.
+prompt-secrets:
+	@for key in gemini-api-key qdrant-api-key; do \
+		current=$$(aws --profile inmo ssm get-parameter --name "inmo-dev-$$key" --with-decryption --query Parameter.Value --output text 2>/dev/null) ; \
+		if [ "$$current" = "REPLACE_ME" ] || [ -z "$$current" ]; then \
+			printf "Enter value for %s (input hidden): " "inmo-dev-$$key" ; \
+			stty -echo ; read value ; stty echo ; echo ; \
+			if [ -z "$$value" ]; then \
+				echo "  ⏭  empty input, skipping (set later via 'aws ssm put-parameter')" ; \
+			else \
+				aws --profile inmo ssm put-parameter --name "inmo-dev-$$key" --type SecureString --value "$$value" --overwrite >/dev/null ; \
+				echo "  ✓ inmo-dev-$$key set" ; \
+			fi ; \
+		else \
+			echo "  ✓ inmo-dev-$$key already set, skipping" ; \
+		fi ; \
+	done

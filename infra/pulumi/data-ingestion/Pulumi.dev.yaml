@@ -1,0 +1,11 @@
+config:
+  aws:region: eu-west-1
+  aws:profile: inmo
+  data-ingestion:lambda_memory_mb: 2048
+  data-ingestion:lambda_timeout_seconds: 600
+  data-ingestion:batch_size: 1
+  # EventBridge cron expression. Default: every Monday at 03:00 UTC.
+  # Disable manually with `aws events disable-rule` when iterating.
+  data-ingestion:schedule_expression: "cron(0 3 ? * MON *)"
+  # S3 prefix the Lambda will read on each scheduled run.
+  data-ingestion:s3_prefix: "html/"

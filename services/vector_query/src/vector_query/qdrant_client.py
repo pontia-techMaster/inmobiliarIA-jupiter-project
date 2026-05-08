@@ -20,7 +20,7 @@ log = logging.getLogger("vector_query.qdrant_client")
 @lru_cache(maxsize=1)
 def _client() -> QdrantClient:
     log.info("connecting to Qdrant at %s", settings.qdrant_url)
-    return QdrantClient(url=settings.qdrant_url)
+    return QdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key or None)
 
 
 def search(vector: list[float], qfilter: Filter | None, k: int) -> list[tuple[str, float]]:

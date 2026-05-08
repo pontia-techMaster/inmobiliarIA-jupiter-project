@@ -1,0 +1,6 @@
+config:
+  aws:region: eu-west-1
+  aws:profile: inmo
+  ranking-and-rendering:lambda_memory_mb: 512
+  ranking-and-rendering:lambda_timeout_seconds: 30
+  ranking-and-rendering:batch_size: 1

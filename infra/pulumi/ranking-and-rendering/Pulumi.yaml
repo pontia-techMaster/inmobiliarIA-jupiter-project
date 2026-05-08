@@ -1,0 +1,10 @@
+name: ranking-and-rendering
+runtime:
+  name: python
+  options:
+    virtualenv: ../.venv
+    toolchain: uv
+description: |
+  Lambda (container image) that consumes rank-jobs, fetches full
+  documents from Qdrant Cloud, reranks by filter match, and publishes
+  to search-responses.

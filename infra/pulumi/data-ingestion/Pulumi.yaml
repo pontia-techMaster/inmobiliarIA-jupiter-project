@@ -1,0 +1,11 @@
+name: data-ingestion
+runtime:
+  name: python
+  options:
+    virtualenv: ../.venv
+    toolchain: uv
+description: |
+  Lambda (container image) that reads HTML from S3, parses property
+  data, normalizes descriptions via Gemini, embeds, and upserts into
+  Qdrant Cloud. Triggered by EventBridge schedule that publishes to
+  the ingest-jobs queue.

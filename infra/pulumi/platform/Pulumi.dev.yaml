@@ -3,3 +3,8 @@ config:
   aws:profile: inmo
   platform:services:
     - process_user_prompt
+    - vector_query
+    - ranking_and_rendering
+    - data_ingestion
+  # Qdrant Cloud URL — non-sensitive, exported as a plain Lambda env var.
+  platform:qdrant_url: "https://e2f151b6-7299-4dfb-a85a-71db6c8a7363.eu-west-1-0.aws.cloud.qdrant.io:6333"

@@ -1,9 +1,10 @@
-"""Lambda + SQS event source mapping for ``process_user_prompt``.
+"""Lambda + SQS event source mapping + EventBridge schedule for
+``data_ingestion``.
 
-Builds the container image from ``services/process_user_prompt/Dockerfile.lambda``
-(repo root as build context so the workspace + shared/ are visible),
-pushes it to the ECR repo created by the platform stack, then deploys
-a Lambda that consumes from the ``search-requests`` queue.
+Differences vs the other service stacks:
+  - No downstream queue (this service is a sink — writes to Qdrant).
+  - EventBridge rule fires on a cron, publishes to ingest-jobs.
+  - Lambda role gets s3:GetObject + s3:ListBucket on the HTML source.
 """
 
 from __future__ import annotations
@@ -19,23 +20,32 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from _shared import default_tags, name  # noqa: E402
 from _shared.refs import PlatformRef  # noqa: E402
 
-SERVICE = "process_user_prompt"
+SERVICE = "data_ingestion"
+SERVICE_DASH = SERVICE.replace("_", "-")
 
 config = pulumi.Config()
 memory_mb = config.require_int("lambda_memory_mb")
 timeout_seconds = config.require_int("lambda_timeout_seconds")
 batch_size = config.require_int("batch_size")
+schedule_expression = config.require("schedule_expression")
+s3_prefix = config.require("s3_prefix")
 
 platform = PlatformRef()
 repo_url = platform.ecr_repo_url(SERVICE)
 log_group_name = platform.log_group_name(SERVICE)
 log_group_arn = platform.log_group_arn(SERVICE)
-search_requests_arn = platform.queue_arn("search-requests")
-search_requests_url = platform.queue_url("search-requests")
-query_jobs_arn = platform.queue_arn("query-jobs")
-query_jobs_url = platform.queue_url("query-jobs")
+
+input_queue_arn = platform.queue_arn("ingest-jobs")
+input_queue_url = platform.queue_url("ingest-jobs")
+
 ssm_gemini_arn = platform.ssm_gemini_api_key_arn()
 ssm_gemini_name = platform.ssm_gemini_api_key_name()
+ssm_qdrant_arn = platform.ssm_qdrant_api_key_arn()
+ssm_qdrant_name = platform.ssm_qdrant_api_key_name()
+qdrant_url = platform.qdrant_url()
+
+html_bucket_name = platform.html_bucket_name()
+html_bucket_arn = platform.html_bucket_arn()
 
 repo_root = Path(__file__).resolve().parents[3]
 
@@ -63,7 +73,7 @@ image = docker_build.Image(
 # ── IAM role for the Lambda ───────────────────────────────────────────────────
 lambda_role = aws.iam.Role(
     "lambda-role",
-    name=name(f"{SERVICE.replace('_', '-')}-lambda-role"),
+    name=name(f"{SERVICE_DASH}-lambda-role"),
     assume_role_policy=pulumi.Output.json_dumps(
         {
             "Version": "2012-10-17",
@@ -79,11 +89,6 @@ lambda_role = aws.iam.Role(
     tags=default_tags(),
 )
 
-# Permissions:
-#   - logs:* on the prefixed CloudWatch log group
-#   - sqs:Receive/Delete/GetAttrs on search-requests (event source needs these)
-#   - sqs:SendMessage on query-jobs (handler publishes the next stage)
-#   - ssm:GetParameter on the Gemini key
 aws.iam.RolePolicy(
     "lambda-role-policy",
     role=lambda_role.id,
@@ -94,7 +99,6 @@ aws.iam.RolePolicy(
                 {
                     "Effect": "Allow",
                     "Action": ["logs:CreateLogStream", "logs:PutLogEvents"],
-                    # Group itself + log streams within it (the `:*` suffix).
                     "Resource": [
                         log_group_arn,
                         log_group_arn.apply(lambda a: f"{a}:*"),
@@ -107,17 +111,9 @@ aws.iam.RolePolicy(
                         "sqs:DeleteMessage",
                         "sqs:GetQueueAttributes",
                     ],
-                    "Resource": search_requests_arn,
+                    "Resource": input_queue_arn,
                 },
                 {
-                    "Effect": "Allow",
-                    "Action": ["sqs:SendMessage"],
-                    "Resource": query_jobs_arn,
-                },
-                {
-                    # GetQueueUrl is needed by shared.sqs._queue_url to resolve
-                    # the URL from a queue name at runtime. Account-scoped
-                    # because ListQueues / GetQueueUrl don't accept ARNs.
                     "Effect": "Allow",
                     "Action": ["sqs:GetQueueUrl"],
                     "Resource": "*",
@@ -125,7 +121,17 @@ aws.iam.RolePolicy(
                 {
                     "Effect": "Allow",
                     "Action": ["ssm:GetParameter", "ssm:GetParameters"],
-                    "Resource": ssm_gemini_arn,
+                    "Resource": [ssm_gemini_arn, ssm_qdrant_arn],
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": ["s3:ListBucket"],
+                    "Resource": html_bucket_arn,
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": ["s3:GetObject"],
+                    "Resource": html_bucket_arn.apply(lambda arn: f"{arn}/*"),
                 },
             ],
         }
@@ -135,23 +141,19 @@ aws.iam.RolePolicy(
 # ── Lambda function ───────────────────────────────────────────────────────────
 fn = aws.lambda_.Function(
     "lambda",
-    name=name(SERVICE.replace("_", "-")),
+    name=name(SERVICE_DASH),
     package_type="Image",
-    image_uri=image.ref,  # digest-pinned reference returned by docker-build
+    image_uri=image.ref,
     role=lambda_role.arn,
     memory_size=memory_mb,
     timeout=timeout_seconds,
     architectures=["x86_64"],
     environment=aws.lambda_.FunctionEnvironmentArgs(
         variables={
-            # Empty SQS_ENDPOINT_URL → shared.sqs._client() falls through to
-            # boto3 defaults (regional endpoint + IAM role creds).
             "SQS_ENDPOINT_URL": "",
-            # Override the queue NAME so settings.queue_query_jobs resolves
-            # to the cloud-prefixed name (`inmo-dev-queue-query-jobs`).
-            # shared.sqs.GetQueueUrl turns that into a full SQS URL.
-            "QUEUE_QUERY_JOBS": query_jobs_url.apply(lambda u: u.split("/")[-1]),
             "GEMINI_API_KEY_PARAM": ssm_gemini_name,
+            "QDRANT_API_KEY_PARAM": ssm_qdrant_name,
+            "QDRANT_URL": qdrant_url,
         },
     ),
     logging_config=aws.lambda_.FunctionLoggingConfigArgs(
@@ -163,13 +165,72 @@ fn = aws.lambda_.Function(
 
 # ── SQS → Lambda event source mapping ────────────────────────────────────────
 aws.lambda_.EventSourceMapping(
-    "search-requests-trigger",
-    event_source_arn=search_requests_arn,
+    "ingest-jobs-trigger",
+    event_source_arn=input_queue_arn,
     function_name=fn.name,
     batch_size=batch_size,
     function_response_types=["ReportBatchItemFailures"],
 )
 
+# ── EventBridge schedule → publish IngestJob to ingest-jobs ──────────────────
+schedule_rule = aws.cloudwatch.EventRule(
+    "ingest-schedule",
+    name=name("ingest-schedule"),
+    description="Periodic data_ingestion trigger",
+    schedule_expression=schedule_expression,
+    tags=default_tags(),
+)
+
+# Role EventBridge assumes to call sqs:SendMessage.
+eb_role = aws.iam.Role(
+    "eb-sqs-role",
+    name=name(f"{SERVICE_DASH}-eb-sqs-role"),
+    assume_role_policy=pulumi.Output.json_dumps(
+        {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {"Service": "events.amazonaws.com"},
+                    "Action": "sts:AssumeRole",
+                }
+            ],
+        }
+    ),
+    tags=default_tags(),
+)
+aws.iam.RolePolicy(
+    "eb-sqs-policy",
+    role=eb_role.id,
+    policy=pulumi.Output.json_dumps(
+        {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": ["sqs:SendMessage"],
+                    "Resource": input_queue_arn,
+                }
+            ],
+        }
+    ),
+)
+
+# Body is a literal JSON IngestJob with an s3:// source — the Lambda
+# parses it, syncs to /tmp, then calls handle().
+ingest_job_body = html_bucket_name.apply(
+    lambda b: f'{{"source":"s3://{b}/{s3_prefix}"}}'
+)
+
+aws.cloudwatch.EventTarget(
+    "ingest-schedule-target",
+    rule=schedule_rule.name,
+    arn=input_queue_arn,
+    role_arn=eb_role.arn,
+    input=ingest_job_body,
+)
+
 pulumi.export("function_arn", fn.arn)
 pulumi.export("function_name", fn.name)
 pulumi.export("image_ref", image.ref)
+pulumi.export("schedule_rule_name", schedule_rule.name)

@@ -79,7 +79,7 @@ def embed_all(descriptions: list[str], force: bool = False) -> list[list[float]]
 
 def ingest(properties: list[PropertyData], descriptions: list[str], embeddings: list[list[float]]) -> None:
 
-    qdrant_client = QdrantClient(url=settings.qdrant_url)
+    qdrant_client = QdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key or None)
     if not qdrant_client.collection_exists(collection_name=settings.qdrant_collection_name):
         qdrant_client.create_collection(
             collection_name=settings.qdrant_collection_name,
