@@ -39,5 +39,6 @@ def handle(job: ProcessUserPromptResponse) -> RankJob:
     return RankJob(
         request_id=job.request_id,
         doc_ids=[doc_id for doc_id, _ in hits],
+        doc_scores=[score for _, score in hits],
         fields=job.fields,
     )
