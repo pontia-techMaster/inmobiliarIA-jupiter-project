@@ -19,9 +19,12 @@ def build_result_item(doc: dict[str, Any]) -> dict[str, Any]:
     return {
         "id": doc["id"],
         "price": payload.get("price"),
-        "city": payload.get("city"),
+        "street": payload.get("street"),
+        "neighborhood": payload.get("neighborhood"),
+        "district": payload.get("district"),
         "rooms": payload.get("rooms"),
-        "score": doc.get("score"),
+        "surface": payload.get("surface"),
+        "score": doc.get("computed_score"),
     }
 
 
@@ -32,6 +35,7 @@ def handle(job: RankJob) -> SearchResponse:
 
     # Retrieve full documents from Qdrant
     docs = get_documents(job.doc_ids)
+    docs = [doc | {"score": score} for doc, score in zip(docs, job.doc_scores, strict=True)]
 
     log.debug("handle: received %d docs from Qdrant", len(docs))
 

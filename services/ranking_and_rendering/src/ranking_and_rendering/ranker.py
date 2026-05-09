@@ -78,7 +78,7 @@ def rank(
     ranked: list[dict[str, Any]] = []
 
     for doc in documents:
-        semantic_score = float(doc.get("score", 1.0))
+        semantic_score = float(doc.get("score", 0.6))
 
         payload = doc.get("payload", {})
         log.debug("Doc %s semantic score: %s", doc.get("id"), semantic_score)
@@ -86,13 +86,13 @@ def rank(
 
         ranked_doc = {
             **doc,
-            "score": score,
+            "computed_score": score,
         }
         log.debug("Doc %s final score: %s", doc.get("id"), score)
         ranked.append(ranked_doc)
 
     ranked.sort(
-        key=lambda document: document["score"],
+        key=lambda document: document["computed_score"],
         reverse=True,
     )
     log.info("Finished ranking %d documents", len(ranked))

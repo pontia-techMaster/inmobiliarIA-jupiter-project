@@ -22,7 +22,7 @@ def get_client() -> QdrantClient:
     return _client
 
 
-def get_documents(doc_ids: list[str]) -> list[dict[str, Any]]:
+def get_documents(doc_ids: list) -> list[dict[str, Any]]:
     """Recuperated documents from Qdrant by their IDs.
     Returns a list of dictionaries with id, payload and score (initialized to 1.0 if Qdrant does not return score).
     """
@@ -50,7 +50,6 @@ def get_documents(doc_ids: list[str]) -> list[dict[str, Any]]:
             {
                 "id": point.id,
                 "payload": payload,
-                "score": payload.get("score", 1.0),
                 # If we haven't saved the similarity score in Qdrant, we start from 1.0 as a base
             }
         )
