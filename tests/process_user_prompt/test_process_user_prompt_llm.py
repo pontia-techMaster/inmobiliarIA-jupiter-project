@@ -1,7 +1,6 @@
 from unittest.mock import MagicMock
 
 import pytest
-
 from process_user_prompt import llm
 from shared.schemas import ProcessUserPromptOutput
 
@@ -70,9 +69,7 @@ def test_extract_data_success(monkeypatch):
         system_prompt_path=llm.SYSTEM_PROMPT_PATH,
     )
 
-    fake_chain.invoke.assert_called_once_with(
-        {"user_input": user_input}
-    )
+    fake_chain.invoke.assert_called_once_with({"user_input": user_input})
 
 
 def test_extract_data_propagates_chain_error(monkeypatch):
@@ -98,9 +95,7 @@ def test_extract_data_propagates_chain_error(monkeypatch):
         system_prompt_path=llm.SYSTEM_PROMPT_PATH,
     )
 
-    fake_chain.invoke.assert_called_once_with(
-        {"user_input": user_input}
-    )
+    fake_chain.invoke.assert_called_once_with({"user_input": user_input})
 
 
 def test_create_chain_success(monkeypatch):
@@ -173,6 +168,4 @@ def test_create_chain_success(monkeypatch):
     assert chain["prompt_template"] == prompt_template
     assert chain["model"] == model
 
-    mock_load_system_prompt.assert_called_once_with(
-        "/fake/system-prompt.md"
-    )
+    mock_load_system_prompt.assert_called_once_with("/fake/system-prompt.md")

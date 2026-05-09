@@ -1,9 +1,8 @@
 from unittest.mock import MagicMock
 
 import pytest
-from pydantic import ValidationError
-
 from process_user_prompt import handler
+from pydantic import ValidationError
 from shared.schemas import (
     ProcessUserPromptOutput,
     ProcessUserPromptResponse,
@@ -80,9 +79,7 @@ def test_handle_success(monkeypatch):
     assert result.fields[3].name == "price"
     assert result.fields[3].value == [200000]
 
-    mock_extract_data.assert_called_once_with(
-        user_input="Busco piso en Madrid con ascensor por menos de 200000 euros"
-    )
+    mock_extract_data.assert_called_once_with(user_input="Busco piso en Madrid con ascensor por menos de 200000 euros")
 
 
 def test_handle_with_empty_fields(monkeypatch):
@@ -111,13 +108,9 @@ def test_handle_with_empty_fields(monkeypatch):
     assert result.request_id == "req-456"
     assert result.prompt == "Quiero algo luminoso, tranquilo y cerca de zonas verdes"
     assert result.fields == []
-    assert result.extra_info == (
-        "Vivienda luminosa en entorno tranquilo, próxima a zonas verdes."
-    )
+    assert result.extra_info == ("Vivienda luminosa en entorno tranquilo, próxima a zonas verdes.")
 
-    mock_extract_data.assert_called_once_with(
-        user_input="Quiero algo luminoso, tranquilo y cerca de zonas verdes"
-    )
+    mock_extract_data.assert_called_once_with(user_input="Quiero algo luminoso, tranquilo y cerca de zonas verdes")
 
 
 def test_handle_does_not_include_user_id_in_response(monkeypatch):
@@ -155,9 +148,7 @@ def test_handle_does_not_include_user_id_in_response(monkeypatch):
 
     assert not hasattr(result, "user_id")
 
-    mock_extract_data.assert_called_once_with(
-        user_input="Busco casa con jardín"
-    )
+    mock_extract_data.assert_called_once_with(user_input="Busco casa con jardín")
 
 
 def test_handle_propagates_extract_data_error(monkeypatch):
@@ -166,9 +157,7 @@ def test_handle_propagates_extract_data_error(monkeypatch):
         prompt="Busco piso barato",
     )
 
-    mock_extract_data = MagicMock(
-        side_effect=RuntimeError("LLM extraction failed")
-    )
+    mock_extract_data = MagicMock(side_effect=RuntimeError("LLM extraction failed"))
 
     monkeypatch.setattr(
         handler,
@@ -179,9 +168,7 @@ def test_handle_propagates_extract_data_error(monkeypatch):
     with pytest.raises(RuntimeError, match="LLM extraction failed"):
         handler.handle(req)
 
-    mock_extract_data.assert_called_once_with(
-        user_input="Busco piso barato"
-    )
+    mock_extract_data.assert_called_once_with(user_input="Busco piso barato")
 
 
 def test_handle_raises_validation_error_when_llm_output_is_invalid(monkeypatch):
@@ -214,6 +201,4 @@ def test_handle_raises_validation_error_when_llm_output_is_invalid(monkeypatch):
     with pytest.raises(ValidationError):
         handler.handle(req)
 
-    mock_extract_data.assert_called_once_with(
-        user_input="Busco castillo medieval en Marte"
-    )
+    mock_extract_data.assert_called_once_with(user_input="Busco castillo medieval en Marte")

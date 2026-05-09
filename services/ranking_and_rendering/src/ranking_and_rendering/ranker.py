@@ -18,7 +18,7 @@ log = logging.getLogger("ranking_and_rendering.ranker")
 
 def rank(
     documents: list[dict[str, Any]],
-    fields: PromptField,
+    fields: list[PromptField],
 ) -> list[dict[str, Any]]:
     """
     Sorts a list of documents using the user's filters.
@@ -38,7 +38,7 @@ def rank(
     Returns:
       - List of documents sorted from highest to lowest score.
     """
-    log.debug("Ranking %d documents with filters %s", len(documents), filters)
+    log.debug("Ranking %d documents with filters %s", len(documents), fields)
 
     ranked: list[dict[str, Any]] = []
 

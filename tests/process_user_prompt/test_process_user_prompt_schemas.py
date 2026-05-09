@@ -1,10 +1,9 @@
 import pytest
 from pydantic import ValidationError
-
 from shared.schemas import (
-    PromptField,
     ProcessUserPromptOutput,
     ProcessUserPromptResponse,
+    PromptField,
     SearchRequest,
 )
 

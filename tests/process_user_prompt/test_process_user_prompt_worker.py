@@ -2,7 +2,6 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
-
 from process_user_prompt import worker
 from shared.schemas import ProcessUserPromptResponse, SearchRequest
 
@@ -181,9 +180,7 @@ def test_main_propagates_handle_error(monkeypatch):
     )
 
     mock_consume = MagicMock(return_value=[req])
-    mock_handle = MagicMock(
-        side_effect=RuntimeError("Handler failed")
-    )
+    mock_handle = MagicMock(side_effect=RuntimeError("Handler failed"))
     mock_publish = MagicMock()
 
     monkeypatch.setattr(worker, "consume", mock_consume)
@@ -228,9 +225,7 @@ def test_main_propagates_publish_error(monkeypatch):
 
     mock_consume = MagicMock(return_value=[req])
     mock_handle = MagicMock(return_value=response)
-    mock_publish = MagicMock(
-        side_effect=RuntimeError("Publish failed")
-    )
+    mock_publish = MagicMock(side_effect=RuntimeError("Publish failed"))
 
     monkeypatch.setattr(worker, "consume", mock_consume)
     monkeypatch.setattr(worker, "handle", mock_handle)

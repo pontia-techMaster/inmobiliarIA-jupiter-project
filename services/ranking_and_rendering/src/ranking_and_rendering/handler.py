@@ -5,7 +5,7 @@ from typing import Any
 
 from shared.schemas import RankJob, SearchResponse
 
-from .qdrant_client import get_documents
+from .qdrant_store import get_documents
 from .ranker import rank
 
 log = logging.getLogger("ranking_and_rendering.handler")

@@ -12,11 +12,7 @@ from data_ingestion.extractor import PropertyData
 
 def test_extract_all(tmp_path, monkeypatch):
     # Evitamos que use el checkpoint real del proyecto
-    monkeypatch.setattr(
-        handler,
-        "EXTRACT_CHECKPOINT",
-        tmp_path / "extract-checkpoint.json"
-    )
+    monkeypatch.setattr(handler, "EXTRACT_CHECKPOINT", tmp_path / "extract-checkpoint.json")
 
     # Creamos un HTML falso porque extract_all busca *.html
     html_file = tmp_path / "property.html"
@@ -26,18 +22,11 @@ def test_extract_all(tmp_path, monkeypatch):
     mock_extractor_class = MagicMock()
     mock_extractor_instance = MagicMock()
 
-    mock_extractor_instance.extract.return_value = PropertyData(
-        id="123",
-        description="A nice property."
-    )
+    mock_extractor_instance.extract.return_value = PropertyData(id="123", description="A nice property.")
 
     mock_extractor_class.return_value = mock_extractor_instance
 
-    monkeypatch.setattr(
-        handler,
-        "PropertyExtractor",
-        mock_extractor_class
-    )
+    monkeypatch.setattr(handler, "PropertyExtractor", mock_extractor_class)
 
     properties = handler.extract_all(tmp_path, force=True)
 
