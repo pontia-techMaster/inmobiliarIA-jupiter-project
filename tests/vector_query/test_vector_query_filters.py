@@ -1,286 +1,313 @@
-import pytest
-from qdrant_client.models import Filter, MatchAny, MatchValue
+from __future__ import annotations
+
+import sys
+from unittest.mock import patch
+
+from qdrant_client.models import FieldCondition, Filter, MatchAny, MatchValue, Range
+
+sys.path.append("services/vector_query/src")
 from shared.schemas import PromptField
-from vector_query.filters import build
+from vector_query.filters import (
+    _BATHROOMS_RELAXATION_COEFFICIENT,
+    _PRICE_RELAXATION_COEFFICIENT,
+    _ROOMS_RELAXATION_COEFFICIENT,
+    _SURFACE_RELAXATION_COEFFICIENT,
+    _build_bathrooms_filter,
+    _build_has_elevator_filter,
+    _build_is_exterior_filter,
+    _build_location_filter,
+    _build_price_filter,
+    _build_property_type_filter,
+    _build_rooms_filter,
+    _build_surface_filter,
+    build,
+)
 
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
-def make_field(name, value, strength="soft", context="test context"):
-    return PromptField(
-        name=name,
-        value=value,
-        strength=strength,
-        extraction_context=context,
-    )
 
+def _get_range(conditions: list[FieldCondition], key: str) -> Range:
+    return next(c.range for c in conditions if c.key == key)  # type: ignore
 
-def test_build_returns_none_when_no_fields():
-    result = build([])
 
-    assert result is None
+def _get_match_any(conditions: list[FieldCondition], key: str) -> MatchAny:
+    return next(c.match for c in conditions if c.key == key)  # type: ignore
 
 
-def test_build_property_type_single_value_uses_match_value():
-    fields = [
-        make_field(
-            name="property_type",
-            value=["apartment"],
-            context="piso",
-        )
-    ]
+def _get_match_value(conditions: list[FieldCondition], key: str) -> MatchValue:
+    return next(c.match for c in conditions if c.key == key)  # type: ignore
 
-    result = build(fields)
 
-    assert isinstance(result, Filter)
-    assert len(result.must) == 1
+# ---------------------------------------------------------------------------
+# _build_property_type_filter
+# ---------------------------------------------------------------------------
 
-    condition = result.must[0]
 
-    assert condition.key == "property_type"
-    assert isinstance(condition.match, MatchValue)
-    assert condition.match.value == "apartment"
+class TestBuildPropertyTypeFilter:
 
+    def test_single_value_hard(self):
+        result = _build_property_type_filter(["apartment"], "hard")
+        assert len(result) == 1
+        assert _get_match_any(result, "property_type").any == ["apartment"]
 
-def test_build_property_type_multiple_values_uses_match_any():
-    fields = [
-        make_field(
-            name="property_type",
-            value=["apartment", "house"],
-            context="piso o casa",
-        )
-    ]
+    def test_single_value_soft(self):
+        # property_type ignora strength, mismo comportamiento
+        result = _build_property_type_filter(["apartment"], "soft")
+        assert _get_match_any(result, "property_type").any == ["apartment"]
 
-    result = build(fields)
+    def test_multiple_values(self):
+        result = _build_property_type_filter(["apartment", "house"], "hard")
+        assert set(_get_match_any(result, "property_type").any) == {"apartment", "house"}
 
-    assert isinstance(result, Filter)
-    assert len(result.must) == 1
 
-    condition = result.must[0]
+# ---------------------------------------------------------------------------
+# _build_rooms_filter
+# ---------------------------------------------------------------------------
 
-    assert condition.key == "property_type"
-    assert isinstance(condition.match, MatchAny)
-    assert condition.match.any == ["apartment", "house"]
 
+class TestBuildRoomsFilter:
 
-def test_build_location_single_value_uses_match_value():
-    fields = [
-        make_field(
-            name="location",
-            value=["Madrid"],
-            context="en Madrid",
-        )
-    ]
+    def test_hard_uses_exact_min(self):
+        result = _build_rooms_filter([3], "hard")
+        assert _get_range(result, "rooms").gte == 3
 
-    result = build(fields)
+    def test_soft_relaxes_by_coefficient(self):
+        result = _build_rooms_filter([3], "soft")
+        assert _get_range(result, "rooms").gte == 3 - _ROOMS_RELAXATION_COEFFICIENT
 
-    assert isinstance(result, Filter)
-    assert len(result.must) == 1
+    def test_soft_floor_at_one(self):
+        result = _build_rooms_filter([1], "soft")
+        assert _get_range(result, "rooms").gte == 1
 
-    condition = result.must[0]
+    def test_uses_min_when_multiple_values(self):
+        # Si el LLM devuelve rango [2, 4], el filtro usa el mínimo
+        result = _build_rooms_filter([2, 4], "hard")
+        assert _get_range(result, "rooms").gte == 2
 
-    assert condition.key == "location"
-    assert isinstance(condition.match, MatchValue)
-    assert condition.match.value == "Madrid"
+    def test_no_upper_bound(self):
+        result = _build_rooms_filter([3], "hard")
+        assert _get_range(result, "rooms").lte is None
 
 
-def test_build_location_multiple_values_uses_match_any():
-    fields = [
-        make_field(
-            name="location",
-            value=["Madrid", "Salamanca"],
-            context="Madrid o Salamanca",
-        )
-    ]
+# ---------------------------------------------------------------------------
+# _build_bathrooms_filter
+# ---------------------------------------------------------------------------
 
-    result = build(fields)
 
-    assert isinstance(result, Filter)
-    assert len(result.must) == 1
+class TestBuildBathroomsFilter:
 
-    condition = result.must[0]
+    def test_hard_uses_exact_min(self):
+        result = _build_bathrooms_filter([2], "hard")
+        assert _get_range(result, "bathrooms").gte == 2
 
-    assert condition.key == "location"
-    assert isinstance(condition.match, MatchAny)
-    assert condition.match.any == ["Madrid", "Salamanca"]
+    def test_soft_relaxes_by_coefficient(self):
+        result = _build_bathrooms_filter([2], "soft")
+        assert _get_range(result, "bathrooms").gte == 2 - _BATHROOMS_RELAXATION_COEFFICIENT
 
+    def test_soft_floor_at_one(self):
+        result = _build_bathrooms_filter([1], "soft")
+        assert _get_range(result, "bathrooms").gte == 1
 
-def test_build_has_elevator_true_uses_match_value():
-    fields = [
-        make_field(
-            name="has_elevator",
-            value=[True],
-            context="con ascensor",
-        )
-    ]
 
-    result = build(fields)
+# ---------------------------------------------------------------------------
+# _build_surface_filter
+# ---------------------------------------------------------------------------
 
-    assert isinstance(result, Filter)
-    assert len(result.must) == 1
 
-    condition = result.must[0]
+class TestBuildSurfaceFilter:
 
-    assert condition.key == "has_elevator"
-    assert isinstance(condition.match, MatchValue)
-    assert condition.match.value is True
+    def test_hard_uses_exact_min(self):
+        result = _build_surface_filter([80], "hard")
+        assert _get_range(result, "surface").gte == 80
 
+    def test_soft_relaxes_by_percentage(self):
+        result = _build_surface_filter([80], "soft")
+        expected = int(80 * (1 - _SURFACE_RELAXATION_COEFFICIENT))
+        assert _get_range(result, "surface").gte == expected
 
-def test_build_has_elevator_false_uses_match_value():
-    fields = [
-        make_field(
-            name="has_elevator",
-            value=[False],
-            context="sin ascensor",
-        )
-    ]
+    def test_soft_relaxation_rounds_down(self):
+        # 75 * 0.85 = 63.75 → int = 63
+        result = _build_surface_filter([75], "soft")
+        assert _get_range(result, "surface").gte == int(75 * (1 - _SURFACE_RELAXATION_COEFFICIENT))
 
-    result = build(fields)
+    def test_uses_min_when_multiple_values(self):
+        result = _build_surface_filter([60, 120], "hard")
+        assert _get_range(result, "surface").gte == 60
 
-    assert isinstance(result, Filter)
-    assert len(result.must) == 1
 
-    condition = result.must[0]
+# ---------------------------------------------------------------------------
+# _build_price_filter
+# ---------------------------------------------------------------------------
 
-    assert condition.key == "has_elevator"
-    assert isinstance(condition.match, MatchValue)
-    assert condition.match.value is False
 
+class TestBuildPriceFilter:
 
-def test_build_is_exterior_true_uses_match_value():
-    fields = [
-        make_field(
-            name="is_exterior",
-            value=[True],
-            context="exterior",
-        )
-    ]
+    def test_hard_uses_exact_max(self):
+        result = _build_price_filter([200_000], "hard")
+        assert _get_range(result, "price").lte == 200_000
 
-    result = build(fields)
+    def test_soft_relaxes_upward_by_percentage(self):
+        result = _build_price_filter([200_000], "soft")
+        expected = int(200_000 * (1 + _PRICE_RELAXATION_COEFFICIENT))
+        assert _get_range(result, "price").lte == expected
 
-    assert isinstance(result, Filter)
-    assert len(result.must) == 1
+    def test_no_lower_bound(self):
+        result = _build_price_filter([200_000], "hard")
+        assert _get_range(result, "price").gte is None
 
-    condition = result.must[0]
+    def test_uses_max_when_multiple_values(self):
+        result = _build_price_filter([150_000, 200_000], "hard")
+        assert _get_range(result, "price").lte == 200_000
 
-    assert condition.key == "is_exterior"
-    assert isinstance(condition.match, MatchValue)
-    assert condition.match.value is True
 
+# ---------------------------------------------------------------------------
+# _build_has_elevator_filter
+# ---------------------------------------------------------------------------
 
-def test_build_price_uses_max_value():
-    fields = [
-        make_field(
-            name="price",
-            value=[150000, 200000],
-            context="entre 150000 y 200000",
-        )
-    ]
 
-    result = build(fields)
+class TestBuildHasElevatorFilter:
 
-    assert isinstance(result, Filter)
-    assert len(result.must) == 1
+    def test_true_value(self):
+        result = _build_has_elevator_filter([True], "hard")
+        assert _get_match_value(result, "has_elevator").value is True
 
-    condition = result.must[0]
+    def test_false_value(self):
+        result = _build_has_elevator_filter([False], "hard")
+        assert _get_match_value(result, "has_elevator").value is False
 
-    assert condition.key == "price"
-    assert isinstance(condition.match, MatchValue)
-    assert condition.match.value == 200000
+    def test_all_must_be_true_for_true(self):
+        # all([True, True]) → True
+        result = _build_has_elevator_filter([True, True], "soft")
+        assert _get_match_value(result, "has_elevator").value is True
 
+    def test_any_false_yields_false(self):
+        # all([True, False]) → False
+        result = _build_has_elevator_filter([True, False], "soft")
+        assert _get_match_value(result, "has_elevator").value is False
 
-def test_build_rooms_uses_min_value():
-    fields = [
-        make_field(
-            name="rooms",
-            value=[3, 4],
-            context="3 o 4 habitaciones",
-        )
-    ]
+    def test_strength_does_not_affect_boolean(self):
+        hard = _build_has_elevator_filter([True], "hard")
+        soft = _build_has_elevator_filter([True], "soft")
+        assert _get_match_value(hard, "has_elevator").value == _get_match_value(soft, "has_elevator").value
 
-    result = build(fields)
 
-    assert isinstance(result, Filter)
-    assert len(result.must) == 1
+# ---------------------------------------------------------------------------
+# _build_is_exterior_filter
+# ---------------------------------------------------------------------------
 
-    condition = result.must[0]
 
-    assert condition.key == "rooms"
-    assert isinstance(condition.match, MatchValue)
-    assert condition.match.value == 3
+class TestBuildIsExteriorFilter:
 
+    def test_true_value(self):
+        result = _build_is_exterior_filter([True], "hard")
+        assert _get_match_value(result, "is_exterior").value is True
 
-def test_build_bathrooms_uses_min_value():
-    fields = [
-        make_field(
-            name="bathrooms",
-            value=[2, 3],
-            context="2 o 3 baños",
-        )
-    ]
+    def test_false_value(self):
+        result = _build_is_exterior_filter([False], "soft")
+        assert _get_match_value(result, "is_exterior").value is False
 
-    result = build(fields)
 
-    assert isinstance(result, Filter)
-    assert len(result.must) == 1
+# ---------------------------------------------------------------------------
+# _build_location_filter
+# ---------------------------------------------------------------------------
 
-    condition = result.must[0]
+MOCK_DISTRICT = {"type": "district", "value": "Centro", "parent_district": None, "score": 95}
+MOCK_NEIGHBOURHOOD = {"type": "neighborhood", "value": "Realejo", "parent_district": "Centro", "score": 90}
 
-    assert condition.key == "bathrooms"
-    assert isinstance(condition.match, MatchValue)
-    assert condition.match.value == 2
 
+class TestBuildLocationFilter:
 
-def test_build_surface_uses_min_value():
-    fields = [
-        make_field(
-            name="surface",
-            value=[80, 100],
-            context="80 o 100 metros",
-        )
-    ]
+    @patch("vector_query.filters.resolve_location", return_value=MOCK_DISTRICT)
+    def test_hard_district_filters_by_district(self, _):
+        result = _build_location_filter(["centro"], "hard")
+        assert any(c.key == "district" for c in result)
+        assert _get_match_any(result, "district").any == ["Centro"]
 
-    result = build(fields)
+    @patch("vector_query.filters.resolve_location", return_value=MOCK_NEIGHBOURHOOD)
+    def test_hard_neighbourhood_filters_by_neighbourhood(self, _):
+        result = _build_location_filter(["realejo"], "hard")
+        assert any(c.key == "neighborhood" for c in result)
+        assert _get_match_any(result, "neighborhood").any == ["Realejo"]
 
-    assert isinstance(result, Filter)
-    assert len(result.must) == 1
+    @patch("vector_query.filters.resolve_location", return_value=MOCK_NEIGHBOURHOOD)
+    def test_soft_neighbourhood_relaxes_to_parent_district(self, _):
+        result = _build_location_filter(["realejo"], "soft")
+        # Soft → filtra por distrito padre, no por barrio
+        assert any(c.key == "district" for c in result)
+        assert not any(c.key == "neighborhood" for c in result)
+        assert _get_match_any(result, "district").any == ["Centro"]
 
-    condition = result.must[0]
+    @patch("vector_query.filters.resolve_location", return_value=MOCK_DISTRICT)
+    def test_soft_district_filters_by_district(self, _):
+        result = _build_location_filter(["centro"], "soft")
+        assert _get_match_any(result, "district").any == ["Centro"]
 
-    assert condition.key == "surface"
-    assert isinstance(condition.match, MatchValue)
-    assert condition.match.value == 80
+    @patch("vector_query.filters.resolve_location", return_value=None)
+    def test_unresolved_location_returns_empty(self, _):
+        result = _build_location_filter(["lugar_inexistente"], "hard")
+        assert result == []
 
+    @patch("vector_query.filters.resolve_location", side_effect=[MOCK_DISTRICT, MOCK_NEIGHBOURHOOD])
+    def test_multiple_values_hard(self, _):
+        result = _build_location_filter(["centro", "realejo"], "hard")
+        keys = [c.key for c in result]
+        assert "district" in keys
+        assert "neighborhood" in keys
 
-def test_build_multiple_fields_generates_multiple_must_conditions():
-    fields = [
-        make_field("property_type", ["apartment"], context="piso"),
-        make_field("location", ["Madrid"], context="Madrid"),
-        make_field("has_elevator", [True], context="ascensor"),
-        make_field("price", [200000], context="menos de 200000"),
-    ]
 
-    result = build(fields)
+# ---------------------------------------------------------------------------
+# build (integración)
+# ---------------------------------------------------------------------------
 
-    assert isinstance(result, Filter)
-    assert len(result.must) == 4
 
-    keys = [condition.key for condition in result.must]
+def _make_field(name: str, value, strength: str = "soft", extraction_context: str = "") -> PromptField:
+    return PromptField(name=name, value=value, strength=strength, extraction_context=extraction_context)
 
-    assert keys == [
-        "property_type",
-        "location",
-        "has_elevator",
-        "price",
-    ]
 
+class TestBuild:
 
-def test_build_price_with_empty_value_raises_error():
-    fields = [
-        make_field(
-            name="price",
-            value=[],
-            context="sin precio",
-        )
-    ]
+    def test_returns_none_when_no_fields(self):
+        assert build([]) is None
 
-    with pytest.raises(ValueError):
-        build(fields)
+    def test_single_field_returns_filter(self):
+        fields = [_make_field("rooms", [3], "hard")]
+        result = build(fields)
+        assert isinstance(result, Filter)
+        assert len(result.must) == 1
+
+    def test_multiple_fields_all_in_must(self):
+        fields = [
+            _make_field("rooms", [3], "hard"),
+            _make_field("price", [200_000], "soft"),
+            _make_field("property_type", ["apartment"], "hard"),
+        ]
+        result = build(fields)
+        assert isinstance(result, Filter)
+        assert len(result.must) == 3
+
+    def test_soft_rooms_relaxation_applied_in_build(self):
+        fields = [_make_field("rooms", [3], "soft")]
+        result = build(fields)
+        condition: FieldCondition = result.must[0]
+        assert condition.range.gte == 3 - _ROOMS_RELAXATION_COEFFICIENT
+
+    def test_hard_price_no_relaxation_in_build(self):
+        fields = [_make_field("price", [200_000], "hard")]
+        result = build(fields)
+        condition: FieldCondition = result.must[0]
+        assert condition.range.lte == 200_000
+
+    def test_soft_price_relaxation_applied_in_build(self):
+        fields = [_make_field("price", [200_000], "soft")]
+        result = build(fields)
+        condition: FieldCondition = result.must[0]
+        assert condition.range.lte == int(200_000 * (1 + _PRICE_RELAXATION_COEFFICIENT))
+
+    @patch("vector_query.filters.resolve_location", return_value=MOCK_DISTRICT)
+    def test_location_integrated_in_build(self, _):
+        fields = [_make_field("location", ["centro"], "hard")]
+        result = build(fields)
+        assert isinstance(result, Filter)
+        assert any(isinstance(c, FieldCondition) and c.key == "district" for c in result.must)
