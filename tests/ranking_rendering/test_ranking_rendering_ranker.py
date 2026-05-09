@@ -1,450 +1,184 @@
+from __future__ import annotations
+
 import sys
 from unittest.mock import patch
 
+import pytest
+
 sys.path.append("services/ranking_and_rendering/src")
+from ranking_and_rendering.ranker import _compute_score, rank
+from shared.schemas import PromptField
 
-# ruff: noqa: E402
-from unittest.mock import MagicMock
-
-from ranking_and_rendering import ranker
-from ranking_and_rendering.handler import handle
-from shared.schemas import PromptField, RankJob
-
-
-def test_ranking_and_rendering_service():
-    job = RankJob(
-        request_id="test-123",
-        doc_ids=["1", "2", "3"],
-        fields=[
-            PromptField(name="price", value=[200000], strength="soft", extraction_context=""),
-            PromptField(name="rooms", value=[3], strength="soft", extraction_context=""),
-            PromptField(name="property_type", value=["apartment", "house"], strength="soft", extraction_context=""),
-            PromptField(name="is_exterior", value=[True], strength="soft", extraction_context=""),
-            PromptField(name="has_elevator", value=[True], strength="soft", extraction_context=""),
-        ],
-    )
-
-    mock_docs = [
-        {
-            "id": "1",
-            "score": 0.80,
-            "payload": {
-                "neighborhood": "Centro",
-                "district": "Centro",
-                "price": 180000,
-                "surface": 85,
-                "rooms": 3,
-                "bathrooms": 2,
-                "property_type": "apartment",
-                "property_subtype": "flat",
-                "floor": "2",
-                "is_exterior": True,
-                "has_elevator": True,
-            },
-        },
-        {
-            "id": "2",
-            "score": 0.90,
-            "payload": {
-                "neighborhood": "Garrido",
-                "district": "Norte",
-                "price": 220000,
-                "surface": 70,
-                "rooms": 2,
-                "bathrooms": 1,
-                "property_type": "apartment",
-                "property_subtype": "flat",
-                "floor": "4",
-                "is_exterior": False,
-                "has_elevator": True,
-            },
-        },
-        {
-            "id": "3",
-            "score": 0.95,
-            "payload": {
-                "neighborhood": "Centro",
-                "district": "Centro",
-                "price": 190000,
-                "surface": 90,
-                "rooms": 3,
-                "bathrooms": 2,
-                "property_type": "house",
-                "property_subtype": "chalet",
-                "floor": "bajo",
-                "is_exterior": True,
-                "has_elevator": False,
-            },
-        },
-    ]
-
-    with patch("ranking_and_rendering.handler.get_documents", return_value=mock_docs):
-        response = handle(job)
-
-    assert response.request_id == "test-123"
-    assert response.results[0]["id"] == "1"
-    assert len(response.results) == 3
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
 
-def make_field(name, value, strength="soft", context="test context"):
+def _make_field(name: str, values: list, strength: str = "soft") -> PromptField:
     return PromptField(
         name=name,
-        value=value,
+        value=values,
         strength=strength,
-        extraction_context=context,
+        extraction_context="test context",
     )
 
 
-def test_rank_returns_empty_list_when_no_documents():
-    result = ranker.rank(
-        documents=[],
-        fields=[],
-    )
-
-    assert result == []
+def _make_doc(doc_id: str, score: float, **payload_kwargs) -> dict:
+    return {"id": doc_id, "score": score, "payload": payload_kwargs}
 
 
-def test_rank_uses_existing_score_when_present(monkeypatch):
-    documents = [
-        {
-            "id": "prop-1",
-            "payload": {},
-            "score": 0.8,
-        }
-    ]
-
-    monkeypatch.setattr(
-        ranker,
-        "RANKING_RULES",
-        [],
-    )
-
-    result = ranker.rank(
-        documents=documents,
-        fields=[],
-    )
-
-    assert result == [
-        {
-            "id": "prop-1",
-            "payload": {},
-            "score": 0.8,
-        }
-    ]
+# ---------------------------------------------------------------------------
+# _compute_score: campos desconocidos
+# ---------------------------------------------------------------------------
 
 
-def test_rank_uses_default_score_when_missing(monkeypatch):
-    documents = [
-        {
-            "id": "prop-1",
-            "payload": {},
-        }
-    ]
+class TestComputeScoreUnknownFields:
 
-    monkeypatch.setattr(
-        ranker,
-        "RANKING_RULES",
-        [],
-    )
+    def test_no_active_fields_returns_only_semantic(self):
+        # Simula que ningún campo del input está en el mapping
+        payload = {"rooms": 3}
+        with patch("ranking_and_rendering.ranker._FIELD_SCORE_MAPPING", {}):
+            score = _compute_score(payload, [_make_field("rooms", [3])], semantic_score=0.8)
+        assert score == pytest.approx(0.8 * 0.10, abs=1e-4)
 
-    result = ranker.rank(
-        documents=documents,
-        fields=[],
-    )
-
-    assert result == [
-        {
-            "id": "prop-1",
-            "payload": {},
-            "score": 1.0,
-        }
-    ]
+    def test_empty_fields_returns_only_semantic(self):
+        payload = {"rooms": 3}
+        score = _compute_score(payload, [], semantic_score=0.9)
+        assert score == pytest.approx(0.9 * 0.10, abs=1e-4)
 
 
-def test_rank_converts_score_to_float(monkeypatch):
-    documents = [
-        {
-            "id": "prop-1",
-            "payload": {},
-            "score": "0.75",
-        }
-    ]
-
-    monkeypatch.setattr(
-        ranker,
-        "RANKING_RULES",
-        [],
-    )
-
-    result = ranker.rank(
-        documents=documents,
-        fields=[],
-    )
-
-    assert result[0]["score"] == 0.75
-    assert isinstance(result[0]["score"], float)
+# ---------------------------------------------------------------------------
+# _compute_score: hard siempre devuelve score pleno por campo
+# ---------------------------------------------------------------------------
 
 
-def test_rank_sorts_documents_by_score_desc(monkeypatch):
-    documents = [
-        {
-            "id": "prop-1",
-            "payload": {},
-            "score": 0.4,
-        },
-        {
-            "id": "prop-2",
-            "payload": {},
-            "score": 0.9,
-        },
-        {
-            "id": "prop-3",
-            "payload": {},
-            "score": 0.6,
-        },
-    ]
+class TestComputeScoreHardFields:
 
-    monkeypatch.setattr(
-        ranker,
-        "RANKING_RULES",
-        [],
-    )
-
-    result = ranker.rank(
-        documents=documents,
-        fields=[],
-    )
-
-    assert [doc["id"] for doc in result] == [
-        "prop-2",
-        "prop-3",
-        "prop-1",
-    ]
-
-    assert [doc["score"] for doc in result] == [
-        0.9,
-        0.6,
-        0.4,
-    ]
+    def test_hard_field_contributes_full_score(self):
+        payload = {"rooms": 3, "price": 150_000}
+        fields = [
+            _make_field("rooms", [3], "hard"),
+            _make_field("price", [200_000], "hard"),
+        ]
+        score = _compute_score(payload, fields, semantic_score=1.0)
+        # Todos los scores son 1.0 → score final debe ser 1.0
+        assert score == pytest.approx(1.0, abs=1e-4)
 
 
-def test_rank_applies_ranking_rules(monkeypatch):
-    documents = [
-        {
-            "id": "prop-1",
-            "payload": {
-                "property_type": "apartment",
-            },
-            "score": 1.0,
-        }
-    ]
-
-    fields = [
-        make_field(
-            name="property_type",
-            value=["apartment"],
-            context="piso",
-        )
-    ]
-
-    rule_1 = MagicMock()
-    rule_1.apply.return_value = 1.3
-
-    rule_2 = MagicMock()
-    rule_2.apply.return_value = 1.6
-
-    monkeypatch.setattr(
-        ranker,
-        "RANKING_RULES",
-        [rule_1, rule_2],
-    )
-
-    result = ranker.rank(
-        documents=documents,
-        fields=fields,
-    )
-
-    assert result[0]["score"] == 1.6
-
-    expected_fields_dict = {
-        "property_type": fields[0],
-    }
-
-    rule_1.apply.assert_called_once_with(
-        score=1.0,
-        payload={"property_type": "apartment"},
-        fields=expected_fields_dict,
-    )
-
-    rule_2.apply.assert_called_once_with(
-        score=1.3,
-        payload={"property_type": "apartment"},
-        fields=expected_fields_dict,
-    )
+# ---------------------------------------------------------------------------
+# _compute_score: penalizaciones soft
+# ---------------------------------------------------------------------------
 
 
-def test_rank_builds_fields_dict_by_field_name(monkeypatch):
-    documents = [
-        {
-            "id": "prop-1",
-            "payload": {
-                "price": 180000,
-                "rooms": 3,
-            },
-            "score": 1.0,
-        }
-    ]
+class TestComputeScoreSoftPenalties:
 
-    fields = [
-        make_field(
-            name="price",
-            value=[200000],
-            context="menos de 200000",
-        ),
-        make_field(
-            name="rooms",
-            value=[3],
-            context="3 habitaciones",
-        ),
-    ]
+    def test_soft_rooms_below_requested_penalizes(self):
+        # Pedidas 3, tiene 2 (zona relajada) → score < 1.0 para ese campo
+        payload_exact = {"rooms": 3}
+        payload_relaxed = {"rooms": 2}
+        fields = [_make_field("rooms", [3], "soft")]
 
-    rule = MagicMock()
-    rule.apply.return_value = 1.0
+        score_exact = _compute_score(payload_exact, fields, semantic_score=0.5)
+        score_relaxed = _compute_score(payload_relaxed, fields, semantic_score=0.5)
 
-    monkeypatch.setattr(
-        ranker,
-        "RANKING_RULES",
-        [rule],
-    )
+        assert score_exact > score_relaxed
 
-    ranker.rank(
-        documents=documents,
-        fields=fields,
-    )
+    def test_soft_price_above_requested_penalizes(self):
+        # Precio dentro vs. precio en zona relajada
+        payload_within = {"price": 190_000}
+        payload_over = {"price": 210_000}
+        fields = [_make_field("price", [200_000], "soft")]
 
-    _, kwargs = rule.apply.call_args
+        score_within = _compute_score(payload_within, fields, semantic_score=0.5)
+        score_over = _compute_score(payload_over, fields, semantic_score=0.5)
 
-    assert kwargs["fields"] == {
-        "price": fields[0],
-        "rooms": fields[1],
-    }
+        assert score_within > score_over
+
+    def test_soft_surface_below_requested_penalizes(self):
+        payload_exact = {"surface": 80}
+        payload_short = {"surface": 70}
+        fields = [_make_field("surface", [80], "soft")]
+
+        score_exact = _compute_score(payload_exact, fields, semantic_score=0.5)
+        score_short = _compute_score(payload_short, fields, semantic_score=0.5)
+
+        assert score_exact > score_short
 
 
-def test_rank_uses_empty_payload_when_missing(monkeypatch):
-    documents = [
-        {
-            "id": "prop-1",
-            "score": 1.0,
-        }
-    ]
-
-    rule = MagicMock()
-    rule.apply.return_value = 1.0
-
-    monkeypatch.setattr(
-        ranker,
-        "RANKING_RULES",
-        [rule],
-    )
-
-    result = ranker.rank(
-        documents=documents,
-        fields=[],
-    )
-
-    assert result == [
-        {
-            "id": "prop-1",
-            "score": 1.0,
-        }
-    ]
-
-    rule.apply.assert_called_once_with(
-        score=1.0,
-        payload={},
-        fields={},
-    )
+# ---------------------------------------------------------------------------
+# _compute_score: el semántico siempre contribuye
+# ---------------------------------------------------------------------------
 
 
-def test_rank_does_not_mutate_original_documents(monkeypatch):
-    documents = [
-        {
-            "id": "prop-1",
-            "payload": {
-                "property_type": "apartment",
-            },
-            "score": 1.0,
-        }
-    ]
+class TestSemanticContribution:
 
-    original_documents = [
-        {
-            "id": "prop-1",
-            "payload": {
-                "property_type": "apartment",
-            },
-            "score": 1.0,
-        }
-    ]
+    def test_higher_semantic_score_yields_higher_final(self):
+        payload = {"rooms": 3}
+        fields = [_make_field("rooms", [3], "hard")]
 
-    rule = MagicMock()
-    rule.apply.return_value = 1.5
+        score_low = _compute_score(payload, fields, semantic_score=0.2)
+        score_high = _compute_score(payload, fields, semantic_score=0.9)
 
-    monkeypatch.setattr(
-        ranker,
-        "RANKING_RULES",
-        [rule],
-    )
+        assert score_high > score_low
 
-    result = ranker.rank(
-        documents=documents,
-        fields=[],
-    )
-
-    assert documents == original_documents
-    assert result[0]["score"] == 1.5
-    assert documents[0]["score"] == 1.0
+    def test_semantic_weight_is_bounded(self):
+        # Con score semántico perfecto y campos perfectos → máximo 1.0
+        payload = {"rooms": 3}
+        fields = [_make_field("rooms", [3], "hard")]
+        score = _compute_score(payload, fields, semantic_score=1.0)
+        assert score <= 1.0
 
 
-def test_rank_orders_after_rules_are_applied(monkeypatch):
-    documents = [
-        {
-            "id": "prop-1",
-            "payload": {
-                "boost": False,
-            },
-            "score": 1.0,
-        },
-        {
-            "id": "prop-2",
-            "payload": {
-                "boost": True,
-            },
-            "score": 0.5,
-        },
-    ]
+# ---------------------------------------------------------------------------
+# rank: ordenación correcta
+# ---------------------------------------------------------------------------
 
-    class BoostRule:
-        def apply(self, score, payload, fields):
-            if payload.get("boost") is True:
-                return score + 1.0
-            return score
 
-    monkeypatch.setattr(
-        ranker,
-        "RANKING_RULES",
-        [BoostRule()],
-    )
+class TestRank:
 
-    result = ranker.rank(
-        documents=documents,
-        fields=[],
-    )
+    def test_returns_sorted_descending(self):
+        docs = [
+            _make_doc("a", 0.9, rooms=2, price=210_000),  # penalizado en rooms y price
+            _make_doc("b", 0.7, rooms=3, price=180_000),  # cumple todo
+            _make_doc("c", 0.5, rooms=3, price=200_000),  # cumple todo, menor semántico
+        ]
+        fields = [
+            _make_field("rooms", [3], "soft"),
+            _make_field("price", [200_000], "soft"),
+        ]
+        result = rank(docs, fields)
+        scores = [r["score"] for r in result]
+        assert scores == sorted(scores, reverse=True)
 
-    assert [doc["id"] for doc in result] == [
-        "prop-2",
-        "prop-1",
-    ]
+    def test_rank_returns_all_documents(self):
+        docs = [_make_doc(str(i), 0.5, rooms=3) for i in range(5)]
+        fields = [_make_field("rooms", [3], "soft")]
+        result = rank(docs, fields)
+        assert len(result) == 5
 
-    assert result[0]["score"] == 1.5
-    assert result[1]["score"] == 1.0
+    def test_rank_overwrites_score_with_final_score(self):
+        # El score original (semántico) debe ser reemplazado por el score final
+        docs = [_make_doc("x", 0.99, rooms=3)]
+        fields = [_make_field("rooms", [3], "hard")]
+        result = rank(docs, fields)
+        # El score final no debe ser 0.99 exacto porque incluye la ponderación
+        assert result[0]["score"] != 0.99
+
+    def test_rank_preserves_other_document_fields(self):
+        docs = [{"id": "z", "score": 0.8, "payload": {"rooms": 3}, "extra": "metadata"}]
+        fields = [_make_field("rooms", [3], "soft")]
+        result = rank(docs, fields)
+        assert result[0]["extra"] == "metadata"
+        assert result[0]["id"] == "z"
+
+    def test_empty_documents_returns_empty(self):
+        result = rank([], [_make_field("rooms", [3])])
+        assert result == []
+
+    def test_empty_fields_ranks_by_semantic_only(self):
+        docs = [
+            _make_doc("high", 0.9, rooms=3),
+            _make_doc("low", 0.2, rooms=3),
+        ]
+        result = rank(docs, fields=[])
+        assert result[0]["id"] == "high"

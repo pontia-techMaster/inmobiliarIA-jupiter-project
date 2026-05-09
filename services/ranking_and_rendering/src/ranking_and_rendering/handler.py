@@ -18,7 +18,6 @@ def build_result_item(doc: dict[str, Any]) -> dict[str, Any]:
     payload = doc.get("payload", {})
     return {
         "id": doc["id"],
-        "title": payload.get("title", f"Propiedad {doc['id']}"),
         "price": payload.get("price"),
         "city": payload.get("city"),
         "rooms": payload.get("rooms"),
