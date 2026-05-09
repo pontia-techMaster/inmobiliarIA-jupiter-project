@@ -1,4 +1,6 @@
 import unicodedata
+from dataclasses import dataclass
+from typing import Literal
 
 from rapidfuzz import fuzz, process, utils
 
@@ -81,7 +83,15 @@ DISTRICTS = {
 }
 
 
-def resolve_location(query: str, score_cutoff=60):
+@dataclass
+class ResolvedLocation:
+    type: Literal["district", "neighborhood"]
+    value: str
+    score: float
+    parent_district: str | None = None
+
+
+def resolve_location(query: str, score_cutoff=60) -> ResolvedLocation | None:
     all_districts = list(DISTRICTS.keys())
     all_neighborhoods = {nb: dist for dist, nbs in DISTRICTS.items() for nb in nbs}
 
@@ -98,15 +108,14 @@ def resolve_location(query: str, score_cutoff=60):
     )
 
     if dist_match and nb_match:
-        # Gana el que tenga mayor score
         if dist_match[1] >= nb_match[1]:
-            return {"type": "district", "value": dist_match[0], "score": dist_match[1]}
+            return ResolvedLocation(type="district", value=dist_match[0], score=dist_match[1])
         else:
             nb = nb_match[0]
-            return {"type": "neighborhood", "value": nb, "parent_district": all_neighborhoods[nb], "score": nb_match[1]}
+            return ResolvedLocation(type="neighborhood", value=nb, score=nb_match[1], parent_district=all_neighborhoods[nb])
     elif dist_match:
-        return {"type": "district", "value": dist_match[0], "score": dist_match[1]}
+        return ResolvedLocation(type="district", value=dist_match[0], score=dist_match[1])
     elif nb_match:
         nb = nb_match[0]
-        return {"type": "neighborhood", "value": nb, "parent_district": all_neighborhoods[nb], "score": nb_match[1]}
+        return ResolvedLocation(type="neighborhood", value=nb, score=nb_match[1], parent_district=all_neighborhoods[nb])
     return None

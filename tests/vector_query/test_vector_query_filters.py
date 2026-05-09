@@ -6,12 +6,15 @@ from unittest.mock import patch
 from qdrant_client.models import FieldCondition, Filter, MatchAny, MatchValue, Range
 
 sys.path.append("services/vector_query/src")
+from shared.constants import (
+    BATHROOMS_RELAXATION_COEFFICIENT,
+    PRICE_RELAXATION_COEFFICIENT,
+    ROOMS_RELAXATION_COEFFICIENT,
+    SURFACE_RELAXATION_COEFFICIENT,
+)
+from shared.location_utils import ResolvedLocation
 from shared.schemas import PromptField
 from vector_query.filters import (
-    _BATHROOMS_RELAXATION_COEFFICIENT,
-    _PRICE_RELAXATION_COEFFICIENT,
-    _ROOMS_RELAXATION_COEFFICIENT,
-    _SURFACE_RELAXATION_COEFFICIENT,
     _build_bathrooms_filter,
     _build_has_elevator_filter,
     _build_is_exterior_filter,
@@ -75,7 +78,7 @@ class TestBuildRoomsFilter:
 
     def test_soft_relaxes_by_coefficient(self):
         result = _build_rooms_filter([3], "soft")
-        assert _get_range(result, "rooms").gte == 3 - _ROOMS_RELAXATION_COEFFICIENT
+        assert _get_range(result, "rooms").gte == 3 - ROOMS_RELAXATION_COEFFICIENT
 
     def test_soft_floor_at_one(self):
         result = _build_rooms_filter([1], "soft")
@@ -104,7 +107,7 @@ class TestBuildBathroomsFilter:
 
     def test_soft_relaxes_by_coefficient(self):
         result = _build_bathrooms_filter([2], "soft")
-        assert _get_range(result, "bathrooms").gte == 2 - _BATHROOMS_RELAXATION_COEFFICIENT
+        assert _get_range(result, "bathrooms").gte == 2 - BATHROOMS_RELAXATION_COEFFICIENT
 
     def test_soft_floor_at_one(self):
         result = _build_bathrooms_filter([1], "soft")
@@ -124,13 +127,13 @@ class TestBuildSurfaceFilter:
 
     def test_soft_relaxes_by_percentage(self):
         result = _build_surface_filter([80], "soft")
-        expected = int(80 * (1 - _SURFACE_RELAXATION_COEFFICIENT))
+        expected = int(80 * (1 - SURFACE_RELAXATION_COEFFICIENT))
         assert _get_range(result, "surface").gte == expected
 
     def test_soft_relaxation_rounds_down(self):
         # 75 * 0.85 = 63.75 → int = 63
         result = _build_surface_filter([75], "soft")
-        assert _get_range(result, "surface").gte == int(75 * (1 - _SURFACE_RELAXATION_COEFFICIENT))
+        assert _get_range(result, "surface").gte == int(75 * (1 - SURFACE_RELAXATION_COEFFICIENT))
 
     def test_uses_min_when_multiple_values(self):
         result = _build_surface_filter([60, 120], "hard")
@@ -150,7 +153,7 @@ class TestBuildPriceFilter:
 
     def test_soft_relaxes_upward_by_percentage(self):
         result = _build_price_filter([200_000], "soft")
-        expected = int(200_000 * (1 + _PRICE_RELAXATION_COEFFICIENT))
+        expected = int(200_000 * (1 + PRICE_RELAXATION_COEFFICIENT))
         assert _get_range(result, "price").lte == expected
 
     def test_no_lower_bound(self):
@@ -212,9 +215,8 @@ class TestBuildIsExteriorFilter:
 # ---------------------------------------------------------------------------
 # _build_location_filter
 # ---------------------------------------------------------------------------
-
-MOCK_DISTRICT = {"type": "district", "value": "Centro", "parent_district": None, "score": 95}
-MOCK_NEIGHBOURHOOD = {"type": "neighborhood", "value": "Realejo", "parent_district": "Centro", "score": 90}
+MOCK_DISTRICT = ResolvedLocation(type="district", value="Centro", parent_district=None, score=95)
+MOCK_NEIGHBOURHOOD = ResolvedLocation(type="neighborhood", value="Realejo", parent_district="Centro", score=90)
 
 
 class TestBuildLocationFilter:
@@ -291,7 +293,7 @@ class TestBuild:
         fields = [_make_field("rooms", [3], "soft")]
         result = build(fields)
         condition: FieldCondition = result.must[0]
-        assert condition.range.gte == 3 - _ROOMS_RELAXATION_COEFFICIENT
+        assert condition.range.gte == 3 - ROOMS_RELAXATION_COEFFICIENT
 
     def test_hard_price_no_relaxation_in_build(self):
         fields = [_make_field("price", [200_000], "hard")]
@@ -303,7 +305,7 @@ class TestBuild:
         fields = [_make_field("price", [200_000], "soft")]
         result = build(fields)
         condition: FieldCondition = result.must[0]
-        assert condition.range.lte == int(200_000 * (1 + _PRICE_RELAXATION_COEFFICIENT))
+        assert condition.range.lte == int(200_000 * (1 + PRICE_RELAXATION_COEFFICIENT))
 
     @patch("vector_query.filters.resolve_location", return_value=MOCK_DISTRICT)
     def test_location_integrated_in_build(self, _):

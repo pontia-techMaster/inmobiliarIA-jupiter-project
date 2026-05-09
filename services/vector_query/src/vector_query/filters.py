@@ -21,15 +21,16 @@ from collections import defaultdict
 from typing import Literal
 
 from qdrant_client.models import Condition, FieldCondition, Filter, MatchAny, MatchValue, Range
+from shared.constants import (
+    BATHROOMS_RELAXATION_COEFFICIENT,
+    PRICE_RELAXATION_COEFFICIENT,
+    ROOMS_RELAXATION_COEFFICIENT,
+    SURFACE_RELAXATION_COEFFICIENT,
+)
 from shared.location_utils import resolve_location
 from shared.schemas import PromptField
 
 log = logging.getLogger("services.vector_query.filters")
-
-_ROOMS_RELAXATION_COEFFICIENT = 1  # unit
-_BATHROOMS_RELAXATION_COEFFICIENT = 1  # unit
-_SURFACE_RELAXATION_COEFFICIENT = 0.15  # percentage
-_PRICE_RELAXATION_COEFFICIENT = 0.10  # percentage
 
 
 def _build_property_type_filter(values: list[str], strength: Literal["soft", "hard"]) -> list[FieldCondition]:
@@ -42,14 +43,12 @@ def _build_location_filter(values: list[str], strength: Literal["soft", "hard"])
         for value in values:
             resolved = resolve_location(query=value)
             if resolved:
-                raw_filter[resolved["type"]].append(resolved["value"])
+                raw_filter[resolved.type].append(resolved.value)
     else:
         for value in values:
             resolved = resolve_location(query=value)
             if resolved:
-                raw_filter["district"].append(
-                    resolved["parent_district"] if resolved["type"] == "neighborhood" else resolved["value"]
-                )
+                raw_filter["district"].append(resolved.parent_district if resolved.type == "neighborhood" else resolved.value)
 
     # process each value
     filters: list[FieldCondition] = []
@@ -64,7 +63,7 @@ def _build_rooms_filter(values: list[int], strength: Literal["soft", "hard"]) ->
     if strength == "hard":
         return [FieldCondition(key="rooms", range=Range(gte=min(values)))]
     else:
-        relaxed_value = max(1, min(values) - _ROOMS_RELAXATION_COEFFICIENT)
+        relaxed_value = max(1, min(values) - ROOMS_RELAXATION_COEFFICIENT)
         return [FieldCondition(key="rooms", range=Range(gte=relaxed_value))]
 
 
@@ -72,7 +71,7 @@ def _build_bathrooms_filter(values: list[int], strength: Literal["soft", "hard"]
     if strength == "hard":
         return [FieldCondition(key="bathrooms", range=Range(gte=min(values)))]
     else:
-        relaxed_value = max(1, min(values) - _BATHROOMS_RELAXATION_COEFFICIENT)
+        relaxed_value = max(1, min(values) - BATHROOMS_RELAXATION_COEFFICIENT)
         return [FieldCondition(key="bathrooms", range=Range(gte=relaxed_value))]
 
 
@@ -81,7 +80,7 @@ def _build_surface_filter(values: list[int], strength: Literal["soft", "hard"]) 
         return [FieldCondition(key="surface", range=Range(gte=min(values)))]
     else:
         value = min(values)
-        relaxed_value = int(value * (1 - _SURFACE_RELAXATION_COEFFICIENT))
+        relaxed_value = int(value * (1 - SURFACE_RELAXATION_COEFFICIENT))
         return [FieldCondition(key="surface", range=Range(gte=relaxed_value))]
 
 
@@ -90,7 +89,7 @@ def _build_price_filter(values: list[int], strength: Literal["soft", "hard"]) ->
         return [FieldCondition(key="price", range=Range(lte=max(values)))]
     else:
         value = max(values)
-        relaxed_value = int(value * (1 + _PRICE_RELAXATION_COEFFICIENT))
+        relaxed_value = int(value * (1 + PRICE_RELAXATION_COEFFICIENT))
         return [FieldCondition(key="price", range=Range(lte=relaxed_value))]
 
 
