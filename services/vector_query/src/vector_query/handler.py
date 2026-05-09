@@ -17,7 +17,7 @@ from shared.schemas import ProcessUserPromptResponse, RankJob
 from shared.settings import settings
 
 from vector_query.filters import build as build_filter
-from vector_query.qdrant_client import search
+from vector_query.qdrant_store import search
 
 log = logging.getLogger("vector_query.handler")
 

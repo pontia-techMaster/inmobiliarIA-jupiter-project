@@ -2,7 +2,6 @@ import json
 from unittest.mock import MagicMock
 
 import pytest
-
 from data_ingestion import handler
 
 
@@ -24,9 +23,7 @@ def test_normalize_all_success(fake_normalize_checkpoint, monkeypatch):
     descriptions = ["Piso amplio y luminoso."]
     normalized_descriptions = ["Piso amplio, luminoso y bien distribuido."]
 
-    mock_normalize_descriptions = MagicMock(
-        return_value=normalized_descriptions
-    )
+    mock_normalize_descriptions = MagicMock(return_value=normalized_descriptions)
 
     monkeypatch.setattr(
         handler,
@@ -40,9 +37,7 @@ def test_normalize_all_success(fake_normalize_checkpoint, monkeypatch):
     mock_normalize_descriptions.assert_called_once_with(descriptions)
     assert fake_normalize_checkpoint.exists()
 
-    checkpoint_content = json.loads(
-        fake_normalize_checkpoint.read_text(encoding="utf-8")
-    )
+    checkpoint_content = json.loads(fake_normalize_checkpoint.read_text(encoding="utf-8"))
 
     assert checkpoint_content == normalized_descriptions
 
@@ -81,9 +76,7 @@ def test_normalize_all_raises_error_when_normalizer_fails(
 ):
     descriptions = ["Descripción que provocará error."]
 
-    mock_normalize_descriptions = MagicMock(
-        side_effect=RuntimeError("LLM normalization failed")
-    )
+    mock_normalize_descriptions = MagicMock(side_effect=RuntimeError("LLM normalization failed"))
 
     monkeypatch.setattr(
         handler,
@@ -116,9 +109,7 @@ def test_embed_all_success(fake_embed_checkpoint, monkeypatch):
     mock_embed_texts.assert_called_once_with(descriptions)
     assert fake_embed_checkpoint.exists()
 
-    checkpoint_content = json.loads(
-        fake_embed_checkpoint.read_text(encoding="utf-8")
-    )
+    checkpoint_content = json.loads(fake_embed_checkpoint.read_text(encoding="utf-8"))
 
     assert checkpoint_content == vectors
 
@@ -157,9 +148,7 @@ def test_embed_all_raises_error_when_embedding_fails(
 ):
     descriptions = ["Texto que provocará error."]
 
-    mock_embed_texts = MagicMock(
-        side_effect=RuntimeError("Embedding generation failed")
-    )
+    mock_embed_texts = MagicMock(side_effect=RuntimeError("Embedding generation failed"))
 
     monkeypatch.setattr(
         handler,

@@ -2,7 +2,6 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
-
 from data_ingestion import handler
 from data_ingestion.extractor import PropertyData
 
@@ -62,13 +61,9 @@ def test_ingest_creates_collection_and_upserts(fake_property, monkeypatch):
 
     assert result is None
 
-    mock_qdrant_client_class.assert_called_once_with(
-        url="http://localhost:6333"
-    )
+    mock_qdrant_client_class.assert_called_once_with(url="http://localhost:6333")
 
-    mock_client.collection_exists.assert_called_once_with(
-        collection_name="properties"
-    )
+    mock_client.collection_exists.assert_called_once_with(collection_name="properties")
 
     mock_client.create_collection.assert_called_once()
     mock_client.upsert.assert_called_once()
@@ -127,9 +122,7 @@ def test_ingest_does_not_create_collection_when_exists(
 
     assert result is None
 
-    mock_client.collection_exists.assert_called_once_with(
-        collection_name="properties"
-    )
+    mock_client.collection_exists.assert_called_once_with(collection_name="properties")
 
     mock_client.create_collection.assert_not_called()
     mock_client.upsert.assert_called_once()

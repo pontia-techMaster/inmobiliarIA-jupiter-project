@@ -40,7 +40,7 @@ src/vector_query/
 ├── handler.py          # orchestrator: embed → filter → search → pack
 ├── embeddings.py       # re-exports embed_query from the shared `embeddings/` package
 ├── filters.py          # PromptFields.fields → qdrant.Filter
-├── qdrant_client.py    # similarity-search wrapper
+├── qdrant_store.py    # similarity-search wrapper
 └── worker.py           # SQS long-poll loop (calls handler.handle)
 ```
 

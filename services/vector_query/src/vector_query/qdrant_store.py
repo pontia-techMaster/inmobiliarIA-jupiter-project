@@ -14,7 +14,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import Filter
 from shared.settings import settings
 
-log = logging.getLogger("vector_query.qdrant_client")
+log = logging.getLogger("vector_query.qdrant_store")
 
 
 @lru_cache(maxsize=1)

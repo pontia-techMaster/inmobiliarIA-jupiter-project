@@ -7,7 +7,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.http.models import Record
 from shared.settings import settings
 
-log = logging.getLogger("ranking_and_rendering.qdrant_client")
+log = logging.getLogger("ranking_and_rendering.qdrant_store")
 # Client global
 _client: QdrantClient | None = None
 
