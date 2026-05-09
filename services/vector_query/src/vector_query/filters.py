@@ -17,22 +17,100 @@ Qdrant must use these same field names.
 from __future__ import annotations
 
 import logging
+from collections import defaultdict
+from typing import Literal
 
-from qdrant_client.models import Condition, FieldCondition, Filter, MatchAny, MatchValue
+from qdrant_client.models import Condition, FieldCondition, Filter, MatchAny, MatchValue, Range
+from shared.location_utils import resolve_location
 from shared.schemas import PromptField
 
-log = logging.getLogger("vector_query.filters")
+log = logging.getLogger("services.vector_query.filters")
 
-_KEY_MATCH_CONDITIONS_MAPPING = {
-    # lte = "lower or equal", gte = "greater or equal"
-    "property_type": "equal",
-    "is_exterior": "equal",
-    "has_elevator": "equal",
-    "location": "equal",
-    "price": "lte",
-    "rooms": "gte",
-    "bathrooms": "gte",
-    "surface": "gte",
+_ROOMS_RELAXATION_COEFFICIENT = 1  # unit
+_BATHROOMS_RELAXATION_COEFFICIENT = 1  # unit
+_SURFACE_RELAXATION_COEFFICIENT = 0.15  # percentage
+_PRICE_RELAXATION_COEFFICIENT = 0.10  # percentage
+
+
+def _build_property_type_filter(values: list[str], strength: Literal["soft", "hard"]) -> list[FieldCondition]:
+    return [FieldCondition(key="property_type", match=MatchAny(any=values))]
+
+
+def _build_location_filter(values: list[str], strength: Literal["soft", "hard"]) -> list[FieldCondition]:
+    raw_filter = defaultdict(list)
+    if strength == "hard":
+        for value in values:
+            resolved = resolve_location(query=value)
+            if resolved:
+                raw_filter[resolved["type"]].append(resolved["value"])
+    else:
+        for value in values:
+            resolved = resolve_location(query=value)
+            if resolved:
+                raw_filter["district"].append(
+                    resolved["parent_district"] if resolved["type"] == "neighborhood" else resolved["value"]
+                )
+
+    # process each value
+    filters: list[FieldCondition] = []
+    if _values := raw_filter.get("district", []):
+        filters.append(FieldCondition(key="district", match=MatchAny(any=_values)))
+    if _values := raw_filter.get("neighborhood", []):
+        filters.append(FieldCondition(key="neighborhood", match=MatchAny(any=_values)))
+    return filters
+
+
+def _build_rooms_filter(values: list[int], strength: Literal["soft", "hard"]) -> list[FieldCondition]:
+    if strength == "hard":
+        return [FieldCondition(key="rooms", range=Range(gte=min(values)))]
+    else:
+        relaxed_value = max(1, min(values) - _ROOMS_RELAXATION_COEFFICIENT)
+        return [FieldCondition(key="rooms", range=Range(gte=relaxed_value))]
+
+
+def _build_bathrooms_filter(values: list[int], strength: Literal["soft", "hard"]) -> list[FieldCondition]:
+    if strength == "hard":
+        return [FieldCondition(key="bathrooms", range=Range(gte=min(values)))]
+    else:
+        relaxed_value = max(1, min(values) - _BATHROOMS_RELAXATION_COEFFICIENT)
+        return [FieldCondition(key="bathrooms", range=Range(gte=relaxed_value))]
+
+
+def _build_surface_filter(values: list[int], strength: Literal["soft", "hard"]) -> list[FieldCondition]:
+    if strength == "hard":
+        return [FieldCondition(key="surface", range=Range(gte=min(values)))]
+    else:
+        value = min(values)
+        relaxed_value = int(value * (1 - _SURFACE_RELAXATION_COEFFICIENT))
+        return [FieldCondition(key="surface", range=Range(gte=relaxed_value))]
+
+
+def _build_price_filter(values: list[int], strength: Literal["soft", "hard"]) -> list[FieldCondition]:
+    if strength == "hard":
+        return [FieldCondition(key="price", range=Range(lte=max(values)))]
+    else:
+        value = max(values)
+        relaxed_value = int(value * (1 + _PRICE_RELAXATION_COEFFICIENT))
+        return [FieldCondition(key="price", range=Range(lte=relaxed_value))]
+
+
+def _build_has_elevator_filter(values: list[bool], strength: Literal["soft", "hard"]) -> list[FieldCondition]:
+    return [FieldCondition(key="has_elevator", match=MatchValue(value=all(values)))]
+
+
+def _build_is_exterior_filter(values: list[bool], strength: Literal["soft", "hard"]) -> list[FieldCondition]:
+    return [FieldCondition(key="is_exterior", match=MatchValue(value=all(values)))]
+
+
+_FILTER_FUNCTION_MAPPING = {
+    "property_type": _build_property_type_filter,
+    "location": _build_location_filter,
+    "rooms": _build_rooms_filter,
+    "bathrooms": _build_bathrooms_filter,
+    "surface": _build_surface_filter,
+    "price": _build_price_filter,
+    "has_elevator": _build_has_elevator_filter,
+    "is_exterior": _build_is_exterior_filter,
 }
 
 
@@ -42,28 +120,17 @@ def build(fields: list[PromptField]) -> Filter | None:
     must: list[Condition] = []
 
     for field in fields:
-        field_value: list = field.value or []
-        field_name: str = field.name or ""
+        field_name = field.name
 
-        condition = _KEY_MATCH_CONDITIONS_MAPPING.get(field_name)
-        if not condition:
-            log.info(f"ignoring unknown filter key: {field_name}")
+        filter_function = _FILTER_FUNCTION_MAPPING.get(field_name)
+        if filter_function is None:
+            log.info(f"not filter function defined for this key: {field_name}")
             continue
 
-        if condition == "equal":
-            if field_name in {"property_type", "location"}:
-                if len(set(field_value)) == 1:
-                    must.append(FieldCondition(key=field_name, match=MatchValue(value=field_value[0])))
-                else:
-                    must.append(FieldCondition(key=field_name, match=MatchAny(any=field_value)))
-            else:  # is_exterior or has_elevator
-                must.append(FieldCondition(key=field_name, match=MatchValue(value=all(field_value))))
-        elif condition == "lte":
-            must.append(FieldCondition(key=field_name, match=MatchValue(value=max(field_value))))
-        elif condition == "gte":
-            must.append(FieldCondition(key=field_name, match=MatchValue(value=min(field_value))))
-        else:
-            log.info(f"ignoring unknown condition: {condition}")
+        field_value = field.value
+        field_strength = field.strength
+
+        must.extend(filter_function(field_value, field_strength))  # type: ignore
 
     if not must:
         return None
