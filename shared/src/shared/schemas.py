@@ -8,6 +8,7 @@ the request that produced it.
 from __future__ import annotations
 
 from typing import Any, Literal
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -61,7 +62,8 @@ class RankJob(BaseModel):
     """Message on ``rank-jobs``: candidate doc ids + filters, input for ``ranking_and_rendering``."""
 
     request_id: str
-    doc_ids: list[str]
+    doc_ids: list[int | UUID | str]
+    doc_scores: list[float]
     fields: list[PromptField] = Field(default_factory=list, description="List of fields")
 
 
