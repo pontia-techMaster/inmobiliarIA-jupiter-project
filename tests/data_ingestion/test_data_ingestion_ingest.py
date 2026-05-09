@@ -76,7 +76,7 @@ def test_ingest_creates_collection_and_upserts(fake_property, monkeypatch):
 
     point = upsert_kwargs["points"][0]
 
-    assert point.id == "123"
+    assert point.id == 999
     assert point.vector == embeddings[0]
 
     assert point.payload["price"] == 150000
