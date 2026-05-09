@@ -146,7 +146,7 @@ def test_search_returns_id_score_tuples(monkeypatch):
     )
 
     assert result == [
-        ("123", 0.98),
+        (123, 0.98),
         ("abc", 0.91),
     ]
 
