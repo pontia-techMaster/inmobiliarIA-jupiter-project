@@ -36,6 +36,7 @@ def test_main_consumes_handles_and_publishes(monkeypatch):
     rank_job = RankJob(
         request_id="req-123",
         doc_ids=["prop-1", "prop-2"],
+        doc_scores=[0.77, 0.69],
         fields=job.fields,
     )
 
@@ -136,12 +137,14 @@ def test_main_processes_multiple_jobs(monkeypatch):
     rank_job_1 = RankJob(
         request_id="req-1",
         doc_ids=["prop-1"],
+        doc_scores=[0.77],
         fields=job_1.fields,
     )
 
     rank_job_2 = RankJob(
         request_id="req-2",
         doc_ids=["prop-2", "prop-3"],
+        doc_scores=[0.78, 0.97],
         fields=job_2.fields,
     )
 
@@ -235,6 +238,7 @@ def test_main_propagates_publish_error(monkeypatch):
     rank_job = RankJob(
         request_id="req-123",
         doc_ids=["prop-1"],
+        doc_scores=[0.77],
         fields=job.fields,
     )
 

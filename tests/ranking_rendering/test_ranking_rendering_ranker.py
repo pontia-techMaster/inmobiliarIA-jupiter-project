@@ -24,7 +24,7 @@ def _make_field(name: str, values: list, strength: str = "soft") -> PromptField:
 
 
 def _make_doc(doc_id: str, score: float, **payload_kwargs) -> dict:
-    return {"id": doc_id, "score": score, "payload": payload_kwargs}
+    return {"id": doc_id, "score": score, "payload": payload_kwargs, "computed_score": score}
 
 
 # ---------------------------------------------------------------------------
@@ -147,7 +147,7 @@ class TestRank:
             _make_field("price", [200_000], "soft"),
         ]
         result = rank(docs, fields)
-        scores = [r["score"] for r in result]
+        scores = [r["computed_score"] for r in result]
         assert scores == sorted(scores, reverse=True)
 
     def test_rank_returns_all_documents(self):
@@ -162,7 +162,7 @@ class TestRank:
         fields = [_make_field("rooms", [3], "hard")]
         result = rank(docs, fields)
         # El score final no debe ser 0.99 exacto porque incluye la ponderación
-        assert result[0]["score"] != 0.99
+        assert result[0]["computed_score"] != 0.99
 
     def test_rank_preserves_other_document_fields(self):
         docs = [{"id": "z", "score": 0.8, "payload": {"rooms": 3}, "extra": "metadata"}]
