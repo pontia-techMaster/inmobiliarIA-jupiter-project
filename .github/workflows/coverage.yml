@@ -1,0 +1,56 @@
+name: Tests and Coverage
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  coverage:
+    name: Run tests with coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Run tests with coverage
+        run: |
+          set -o pipefail
+          uv run pytest \
+            --cov=shared \
+            --cov=api_gateway \
+            --cov=data_ingestion \
+            --cov=process_user_prompt \
+            --cov=ranking_and_rendering \
+            --cov=tracer \
+            --cov=vector_query \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --cov-fail-under=70 | tee coverage.txt
+
+      - name: Add coverage summary
+        if: always()
+        run: |
+          echo "## Coverage report" >> $GITHUB_STEP_SUMMARY
+          echo '```txt' >> $GITHUB_STEP_SUMMARY
+          cat coverage.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage.xml
+            coverage.txt
