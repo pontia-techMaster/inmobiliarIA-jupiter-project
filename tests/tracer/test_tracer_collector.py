@@ -16,7 +16,7 @@ REQUEST_ID = "123e4567-e89b-12d3-a456-426614174000"
 
 
 def test_parse_line_with_docker_timestamp():
-    raw = b"2026-05-09T10:00:00.000000000Z " b"request_id=123e4567-e89b-12d3-a456-426614174000 message\n"
+    raw = b"2026-05-09T10:00:00.000000000Z request_id=123e4567-e89b-12d3-a456-426614174000 message\n"
 
     result = _parse_line(raw)
 

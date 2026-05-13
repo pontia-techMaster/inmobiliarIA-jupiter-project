@@ -18,7 +18,8 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from typing import Literal
+from collections.abc import Callable
+from typing import Any, Literal
 
 from qdrant_client.models import Condition, FieldCondition, Filter, MatchAny, MatchValue, Range
 from shared.constants import (
@@ -33,11 +34,11 @@ from shared.schemas import PromptField
 log = logging.getLogger("services.vector_query.filters")
 
 
-def _build_property_type_filter(values: list[str], strength: Literal["soft", "hard"]) -> list[FieldCondition]:
-    return [FieldCondition(key="property_type", match=MatchAny(any=values))]
+def _build_property_type_filter(values: list[str], strength: Literal["soft", "hard"]) -> Condition:
+    return FieldCondition(key="property_type", match=MatchAny(any=values))
 
 
-def _build_location_filter(values: list[str], strength: Literal["soft", "hard"]) -> list[FieldCondition]:
+def _build_location_filter(values: list[str], strength: Literal["soft", "hard"]) -> Condition:
     raw_filter = defaultdict(list)
     if strength == "hard":
         for value in values:
@@ -51,57 +52,65 @@ def _build_location_filter(values: list[str], strength: Literal["soft", "hard"])
                 raw_filter["district"].append(resolved.parent_district if resolved.type == "neighborhood" else resolved.value)
 
     # process each value
-    filters: list[FieldCondition] = []
+    conditions: list[Condition] = []
     if _values := raw_filter.get("district", []):
-        filters.append(FieldCondition(key="district", match=MatchAny(any=_values)))
+        conditions.append(FieldCondition(key="district", match=MatchAny(any=_values)))
     if _values := raw_filter.get("neighborhood", []):
-        filters.append(FieldCondition(key="neighborhood", match=MatchAny(any=_values)))
-    return filters
+        conditions.append(FieldCondition(key="neighborhood", match=MatchAny(any=_values)))
+
+    if len(conditions) > 1:
+        return Filter(should=conditions)
+
+    if conditions:
+        return conditions[0]
+
+    return Filter()
 
 
-def _build_rooms_filter(values: list[int], strength: Literal["soft", "hard"]) -> list[FieldCondition]:
+def _build_rooms_filter(values: list[int], strength: Literal["soft", "hard"]) -> Condition:
     if strength == "hard":
-        return [FieldCondition(key="rooms", range=Range(gte=min(values)))]
+        return FieldCondition(key="rooms", range=Range(gte=min(values)))
     else:
         relaxed_value = max(1, min(values) - ROOMS_RELAXATION_COEFFICIENT)
-        return [FieldCondition(key="rooms", range=Range(gte=relaxed_value))]
+        return FieldCondition(key="rooms", range=Range(gte=relaxed_value))
 
 
-def _build_bathrooms_filter(values: list[int], strength: Literal["soft", "hard"]) -> list[FieldCondition]:
+def _build_bathrooms_filter(values: list[int], strength: Literal["soft", "hard"]) -> Condition:
     if strength == "hard":
-        return [FieldCondition(key="bathrooms", range=Range(gte=min(values)))]
+        return FieldCondition(key="bathrooms", range=Range(gte=min(values)))
     else:
         relaxed_value = max(1, min(values) - BATHROOMS_RELAXATION_COEFFICIENT)
-        return [FieldCondition(key="bathrooms", range=Range(gte=relaxed_value))]
+        return FieldCondition(key="bathrooms", range=Range(gte=relaxed_value))
 
 
-def _build_surface_filter(values: list[int], strength: Literal["soft", "hard"]) -> list[FieldCondition]:
+def _build_surface_filter(values: list[int], strength: Literal["soft", "hard"]) -> Condition:
     if strength == "hard":
-        return [FieldCondition(key="surface", range=Range(gte=min(values)))]
+        return FieldCondition(key="surface", range=Range(gte=min(values)))
     else:
         value = min(values)
         relaxed_value = int(value * (1 - SURFACE_RELAXATION_COEFFICIENT))
-        return [FieldCondition(key="surface", range=Range(gte=relaxed_value))]
+        return FieldCondition(key="surface", range=Range(gte=relaxed_value))
 
 
-def _build_price_filter(values: list[int], strength: Literal["soft", "hard"]) -> list[FieldCondition]:
+def _build_price_filter(values: list[int], strength: Literal["soft", "hard"]) -> Condition:
     if strength == "hard":
-        return [FieldCondition(key="price", range=Range(lte=max(values)))]
+        return FieldCondition(key="price", range=Range(lte=max(values)))
     else:
         value = max(values)
         relaxed_value = int(value * (1 + PRICE_RELAXATION_COEFFICIENT))
-        return [FieldCondition(key="price", range=Range(lte=relaxed_value))]
+        return FieldCondition(key="price", range=Range(lte=relaxed_value))
 
 
-def _build_has_elevator_filter(values: list[bool], strength: Literal["soft", "hard"]) -> list[FieldCondition]:
-    return [FieldCondition(key="has_elevator", match=MatchValue(value=all(values)))]
+def _build_has_elevator_filter(values: list[bool], strength: Literal["soft", "hard"]) -> Condition:
+    return FieldCondition(key="has_elevator", match=MatchValue(value=all(values)))
 
 
-def _build_is_exterior_filter(values: list[bool], strength: Literal["soft", "hard"]) -> list[FieldCondition]:
-    return [FieldCondition(key="is_exterior", match=MatchValue(value=all(values)))]
+def _build_is_exterior_filter(values: list[bool], strength: Literal["soft", "hard"]) -> Condition:
+    return FieldCondition(key="is_exterior", match=MatchValue(value=all(values)))
 
 
-_FILTER_FUNCTION_MAPPING = {
+type FilterFunction = Callable[[list[Any], Literal["soft", "hard"]], Condition]
+_FILTER_FUNCTION_MAPPING: dict[str, FilterFunction] = {
     "property_type": _build_property_type_filter,
     "location": _build_location_filter,
     "rooms": _build_rooms_filter,
@@ -129,7 +138,7 @@ def build(fields: list[PromptField]) -> Filter | None:
         field_value = field.value
         field_strength = field.strength
 
-        must.extend(filter_function(field_value, field_strength))  # type: ignore
+        must.append(filter_function(field_value, field_strength))
 
     if not must:
         return None
