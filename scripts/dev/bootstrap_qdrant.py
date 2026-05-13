@@ -49,9 +49,9 @@ def main() -> None:
     vectors = embed_texts(texts)
     print(f"embedded {len(vectors)} documents (dim={len(vectors[0])})")
 
-    assert len(vectors[0]) == EMBEDDINGS_DIMENSIONALITY, (
-        f"expected {EMBEDDINGS_DIMENSIONALITY}-dim vectors, got {len(vectors[0])}"
-    )
+    assert (
+        len(vectors[0]) == EMBEDDINGS_DIMENSIONALITY
+    ), f"expected {EMBEDDINGS_DIMENSIONALITY}-dim vectors, got {len(vectors[0])}"
 
     client = QdrantClient(url=settings.qdrant_url)
     collection = settings.qdrant_collection
