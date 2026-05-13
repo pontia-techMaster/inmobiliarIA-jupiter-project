@@ -33,7 +33,6 @@ def _make_doc(doc_id: str, score: float, **payload_kwargs) -> dict:
 
 
 class TestComputeScoreUnknownFields:
-
     def test_no_active_fields_returns_only_semantic(self):
         # Simula que ningún campo del input está en el mapping
         payload = {"rooms": 3}
@@ -53,7 +52,6 @@ class TestComputeScoreUnknownFields:
 
 
 class TestComputeScoreHardFields:
-
     def test_hard_field_contributes_full_score(self):
         payload = {"rooms": 3, "price": 150_000}
         fields = [
@@ -71,7 +69,6 @@ class TestComputeScoreHardFields:
 
 
 class TestComputeScoreSoftPenalties:
-
     def test_soft_rooms_below_requested_penalizes(self):
         # Pedidas 3, tiene 2 (zona relajada) → score < 1.0 para ese campo
         payload_exact = {"rooms": 3}
@@ -111,7 +108,6 @@ class TestComputeScoreSoftPenalties:
 
 
 class TestSemanticContribution:
-
     def test_higher_semantic_score_yields_higher_final(self):
         payload = {"rooms": 3}
         fields = [_make_field("rooms", [3], "hard")]
@@ -135,7 +131,6 @@ class TestSemanticContribution:
 
 
 class TestRank:
-
     def test_returns_sorted_descending(self):
         docs = [
             _make_doc("a", 0.9, rooms=2, price=210_000),  # penalizado en rooms y price

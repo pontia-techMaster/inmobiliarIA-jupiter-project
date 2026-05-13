@@ -49,7 +49,6 @@ def _get_match_value(condition: FieldCondition) -> MatchValue:
 
 
 class TestBuildPropertyTypeFilter:
-
     def test_single_value_hard(self):
         result = _build_property_type_filter(["apartment"], "hard")
         assert _get_match_any(result).any == ["apartment"]
@@ -69,7 +68,6 @@ class TestBuildPropertyTypeFilter:
 
 
 class TestBuildRoomsFilter:
-
     def test_hard_uses_exact_min(self):
         result = _build_rooms_filter([3], "hard")
         assert _get_range(result).gte == 3
@@ -97,7 +95,6 @@ class TestBuildRoomsFilter:
 
 
 class TestBuildBathroomsFilter:
-
     def test_hard_uses_exact_min(self):
         assert _get_range(_build_bathrooms_filter([2], "hard")).gte == 2
 
@@ -114,7 +111,6 @@ class TestBuildBathroomsFilter:
 
 
 class TestBuildSurfaceFilter:
-
     def test_hard_uses_exact_min(self):
         assert _get_range(_build_surface_filter([80], "hard")).gte == 80
 
@@ -135,7 +131,6 @@ class TestBuildSurfaceFilter:
 
 
 class TestBuildPriceFilter:
-
     def test_hard_uses_exact_max(self):
         assert _get_range(_build_price_filter([200_000], "hard")).lte == 200_000
 
@@ -156,7 +151,6 @@ class TestBuildPriceFilter:
 
 
 class TestBuildHasElevatorFilter:
-
     def test_true_value(self):
         assert _get_match_value(_build_has_elevator_filter([True], "hard")).value is True
 
@@ -181,7 +175,6 @@ class TestBuildHasElevatorFilter:
 
 
 class TestBuildIsExteriorFilter:
-
     def test_true_value(self):
         assert _get_match_value(_build_is_exterior_filter([True], "hard")).value is True
 
@@ -197,7 +190,6 @@ MOCK_NEIGHBOURHOOD = ResolvedLocation(type="neighborhood", value="Realejo", pare
 
 
 class TestBuildLocationFilter:
-
     @patch("vector_query.filters.resolve_location", return_value=MOCK_DISTRICT)
     def test_hard_district_filters_by_district(self, _):
         result = _build_location_filter(["centro"], "hard")
@@ -250,7 +242,6 @@ def _make_field(name: str, value, strength: str = "soft", extraction_context: st
 
 
 class TestBuild:
-
     def test_returns_none_when_no_fields(self):
         assert build([]) is None
 
@@ -273,19 +264,19 @@ class TestBuild:
     def test_soft_rooms_relaxation_applied_in_build(self):
         fields = [_make_field("rooms", [3], "soft")]
         result = build(fields)
-        condition: FieldCondition = result.must[0]
+        condition: FieldCondition = result.must[0]  # type: ignore
         assert condition.range.gte == 3 - ROOMS_RELAXATION_COEFFICIENT
 
     def test_hard_price_no_relaxation_in_build(self):
         fields = [_make_field("price", [200_000], "hard")]
         result = build(fields)
-        condition: FieldCondition = result.must[0]
+        condition: FieldCondition = result.must[0]  # type: ignore
         assert condition.range.lte == 200_000
 
     def test_soft_price_relaxation_applied_in_build(self):
         fields = [_make_field("price", [200_000], "soft")]
         result = build(fields)
-        condition: FieldCondition = result.must[0]
+        condition: FieldCondition = result.must[0]  # type: ignore
         assert condition.range.lte == int(200_000 * (1 + PRICE_RELAXATION_COEFFICIENT))
 
     @patch("vector_query.filters.resolve_location", return_value=MOCK_DISTRICT)
