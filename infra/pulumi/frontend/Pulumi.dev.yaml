@@ -1,3 +1,4 @@
 config:
   aws:region: eu-west-1
   aws:profile: inmo
+encryptionsalt: v1:1QPnx8gFYqs=:v1:stsN2tAtPuPlvC1z:8lMzSnFATh1LqURfC4MHZGFhGCyJHw==

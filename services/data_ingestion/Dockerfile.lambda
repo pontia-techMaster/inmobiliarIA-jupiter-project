@@ -13,4 +13,8 @@ RUN uv export --package data_ingestion --frozen --no-dev --no-emit-workspace \
     pip install --no-cache-dir --target ${LAMBDA_TASK_ROOT} -r /tmp/requirements.txt && \
     pip install --no-cache-dir --target ${LAMBDA_TASK_ROOT} --no-deps ./shared ./services/data_ingestion
 
+# Lambda's RIE expects to start in LAMBDA_TASK_ROOT (= /var/task); without
+# this reset the container errors out with Runtime.InvalidWorkingDir.
+WORKDIR ${LAMBDA_TASK_ROOT}
+
 CMD ["data_ingestion.lambda_handler.handler"]

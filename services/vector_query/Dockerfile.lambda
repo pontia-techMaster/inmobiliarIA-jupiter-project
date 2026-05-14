@@ -16,4 +16,8 @@ RUN uv export --package vector_query --frozen --no-dev --no-emit-workspace \
     pip install --no-cache-dir --target ${LAMBDA_TASK_ROOT} -r /tmp/requirements.txt && \
     pip install --no-cache-dir --target ${LAMBDA_TASK_ROOT} --no-deps ./shared ./services/vector_query
 
+# Lambda's RIE expects to start in LAMBDA_TASK_ROOT (= /var/task); without
+# this reset the container errors out with Runtime.InvalidWorkingDir.
+WORKDIR ${LAMBDA_TASK_ROOT}
+
 CMD ["vector_query.lambda_handler.handler"]

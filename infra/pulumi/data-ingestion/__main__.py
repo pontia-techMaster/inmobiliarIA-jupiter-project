@@ -59,8 +59,18 @@ image = docker_build.Image(
         location=str(repo_root / "services" / SERVICE / "Dockerfile.lambda"),
     ),
     platforms=[docker_build.Platform.LINUX_AMD64],
-    push=True,
+    # `push=False` avoids Pulumi auto-adding a second export; the actual
+    # registry push happens via `push=true` in the export raw spec.
+    push=False,
     tags=[repo_url.apply(lambda url: f"{url}:latest")],
+    # Lambda only accepts plain image manifests, not OCI image indexes
+    # with attestations. Disable provenance + SBOM via a raw buildx
+    # output spec.
+    exports=[
+        docker_build.ExportArgs(
+            raw="type=registry,push=true,provenance=false,sbom=false",
+        )
+    ],
     registries=[
         docker_build.RegistryArgs(
             address=repo_url,
@@ -143,7 +153,7 @@ fn = aws.lambda_.Function(
     "lambda",
     name=name(SERVICE_DASH),
     package_type="Image",
-    image_uri=image.ref,
+    image_uri=pulumi.Output.all(repo_url, image.digest).apply(lambda a: f"{a[0]}@{a[1]}"),
     role=lambda_role.arn,
     memory_size=memory_mb,
     timeout=timeout_seconds,
@@ -154,6 +164,8 @@ fn = aws.lambda_.Function(
             "GEMINI_API_KEY_PARAM": ssm_gemini_name,
             "QDRANT_API_KEY_PARAM": ssm_qdrant_name,
             "QDRANT_URL": qdrant_url,
+            # /var/task is read-only in Lambda; only /tmp is writable.
+            "DATA_INGESTION_CHECKPOINT_DIR": "/tmp/.checkpoints",
         },
     ),
     logging_config=aws.lambda_.FunctionLoggingConfigArgs(

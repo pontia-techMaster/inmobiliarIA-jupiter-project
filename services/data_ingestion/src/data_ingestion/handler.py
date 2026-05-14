@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -17,8 +18,11 @@ load_dotenv()
 
 logger = logging.getLogger("data_ingestion.handler")
 
+# Checkpoint dir defaults to a path next to the service source (writable in
+# local dev), overridable via env var. In AWS Lambda the LAMBDA_TASK_ROOT is
+# read-only, so the cloud stack sets DATA_INGESTION_CHECKPOINT_DIR=/tmp/...
 service_dir = Path(__file__).parent.parent.parent
-CHECKPOINT_DIR = service_dir / ".checkpoints"
+CHECKPOINT_DIR = Path(os.environ.get("DATA_INGESTION_CHECKPOINT_DIR", str(service_dir / ".checkpoints")))
 CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
 EXTRACT_CHECKPOINT = CHECKPOINT_DIR / "extract-checkpoint.json"
 NORMALIZE_CHECKPOINT = CHECKPOINT_DIR / "normalize-checkpoint.json"
@@ -77,6 +81,38 @@ def embed_all(descriptions: list[str], force: bool = False) -> list[list[float]]
     return vectors
 
 
+# Payload indexes vector_query needs to filter on. Qdrant doesn't index
+# payload fields by default — filtering on an unindexed field returns
+# "Bad request: Index required but not found".
+PAYLOAD_INDEXES: list[tuple[str, str]] = [
+    ("property_type", "keyword"),
+    ("is_exterior", "bool"),
+    ("has_elevator", "bool"),
+    ("location", "keyword"),
+    ("district", "keyword"),
+    ("neighborhood", "keyword"),
+    ("price", "integer"),
+    ("rooms", "integer"),
+    ("surface", "integer"),
+    ("bathrooms", "integer"),
+]
+
+
+def _ensure_payload_indexes(qdrant_client: QdrantClient) -> None:
+    """Create payload indexes idempotently. Skips ones that already exist."""
+    for field, schema in PAYLOAD_INDEXES:
+        try:
+            qdrant_client.create_payload_index(
+                collection_name=settings.qdrant_collection_name,
+                field_name=field,
+                field_schema=schema,
+            )
+            logger.info("created payload index: %s (%s)", field, schema)
+        except Exception as e:
+            # already exists / 409 — fine
+            logger.info("payload index %s skipped: %s", field, str(e).splitlines()[0][:80])
+
+
 def ingest(properties: list[PropertyData], descriptions: list[str], embeddings: list[list[float]]) -> None:
 
     qdrant_client = QdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key or None)
@@ -85,6 +121,7 @@ def ingest(properties: list[PropertyData], descriptions: list[str], embeddings: 
             collection_name=settings.qdrant_collection_name,
             vectors_config=VectorParams(size=EMBEDDINGS_DIMENSIONALITY, distance=Distance.COSINE),
         )
+    _ensure_payload_indexes(qdrant_client)
 
     points = [
         PointStruct(

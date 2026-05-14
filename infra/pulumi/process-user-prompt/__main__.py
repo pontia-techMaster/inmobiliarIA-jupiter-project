@@ -49,8 +49,20 @@ image = docker_build.Image(
         location=str(repo_root / "services" / SERVICE / "Dockerfile.lambda"),
     ),
     platforms=[docker_build.Platform.LINUX_AMD64],
-    push=True,
+    # `push=False` here means "don't auto-add a default registry export";
+    # the actual push happens via `push=true` inside the explicit export
+    # below. Setting both would create *two* exports, which BuildKit
+    # rejects unless on v0.13+.
+    push=False,
     tags=[repo_url.apply(lambda url: f"{url}:latest")],
+    # Lambda only accepts plain image manifests, not OCI image indexes
+    # with attestations. Disable provenance + SBOM via a raw buildx
+    # output spec so Lambda's image validator is happy.
+    exports=[
+        docker_build.ExportArgs(
+            raw="type=registry,push=true,provenance=false,sbom=false",
+        )
+    ],
     registries=[
         docker_build.RegistryArgs(
             address=repo_url,
@@ -137,7 +149,10 @@ fn = aws.lambda_.Function(
     "lambda",
     name=name(SERVICE.replace("_", "-")),
     package_type="Image",
-    image_uri=image.ref,  # digest-pinned reference returned by docker-build
+    # `image.ref` is `<repo>:<tag>@<digest>` (combined). Lambda's CreateFunction
+    # accepts only `<repo>:<tag>` OR `<repo>@<digest>`, not both. Build the
+    # digest-pinned form ourselves for immutability.
+    image_uri=pulumi.Output.all(repo_url, image.digest).apply(lambda a: f"{a[0]}@{a[1]}"),
     role=lambda_role.arn,
     memory_size=memory_mb,
     timeout=timeout_seconds,

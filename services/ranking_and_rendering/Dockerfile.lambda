@@ -13,4 +13,8 @@ RUN uv export --package ranking_and_rendering --frozen --no-dev --no-emit-worksp
     pip install --no-cache-dir --target ${LAMBDA_TASK_ROOT} -r /tmp/requirements.txt && \
     pip install --no-cache-dir --target ${LAMBDA_TASK_ROOT} --no-deps ./shared ./services/ranking_and_rendering
 
+# Lambda's RIE expects to start in LAMBDA_TASK_ROOT (= /var/task); without
+# this reset the container errors out with Runtime.InvalidWorkingDir.
+WORKDIR ${LAMBDA_TASK_ROOT}
+
 CMD ["ranking_and_rendering.lambda_handler.handler"]

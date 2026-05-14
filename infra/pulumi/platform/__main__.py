@@ -27,20 +27,31 @@ account_id = aws.get_caller_identity().account_id
 # ── SQS queues ────────────────────────────────────────────────────────────────
 # Names match shared/settings.py so the same code talks to either ElasticMQ
 # (local) or real SQS (cloud) by switching the endpoint.
-QUEUES = [
-    "search-requests",
-    "query-jobs",
-    "rank-jobs",
-    "search-responses",
-    "ingest-jobs",
-]
+#
+# AWS requires `visibility_timeout_seconds >= consumer Lambda timeout` and
+# recommends 6× for safe retries. Per-queue values reflect the consumer's
+# expected runtime:
+#   - search-requests / query-jobs / rank-jobs: short workers (~30-60s)
+#   - search-responses: read by the FE, no Lambda consumer
+#   - ingest-jobs: data_ingestion can run up to 600s — needs 3600s here
+# Visibility must be >= consumer Lambda timeout; AWS recommends 6×.
+#   process_user_prompt has 180s timeout (Gemini retries can be slow)
+#   vector_query / ranking_and_rendering are quick (<60s)
+#   data_ingestion can run up to 600s
+QUEUE_VISIBILITY = {
+    "search-requests": 240,
+    "query-jobs": 60,
+    "rank-jobs": 60,
+    "search-responses": 60,
+    "ingest-jobs": 3600,
+}
 
 queues: dict[str, aws.sqs.Queue] = {}
-for q in QUEUES:
+for q, visibility in QUEUE_VISIBILITY.items():
     queue = aws.sqs.Queue(
         f"queue-{q}",
         name=name(f"queue-{q}"),
-        visibility_timeout_seconds=60,
+        visibility_timeout_seconds=visibility,
         message_retention_seconds=345600,  # 4 days
         tags=default_tags(),
     )
@@ -49,6 +60,12 @@ for q in QUEUES:
     pulumi.export(f"queue_{q}_arn", queue.arn)
 
 # ── ECR repos (one per Lambda service) ────────────────────────────────────────
+# Each repo needs a RepositoryPolicy that lets the Lambda service pull
+# the image — otherwise CreateFunction fails with "Source image is not
+# valid" (generic Lambda error meaning "can't fetch image"). The policy
+# is scoped to Lambda functions in this account.
+region = aws.config.region or "eu-west-1"
+
 for svc in services:
     repo = aws.ecr.Repository(
         f"ecr-{svc}",
@@ -74,6 +91,31 @@ for svc in services:
                         "action": {"type": "expire"},
                     }
                 ]
+            }
+        ),
+    )
+    aws.ecr.RepositoryPolicy(
+        f"ecr-{svc}-lambda-pull",
+        repository=repo.name,
+        policy=pulumi.Output.json_dumps(
+            {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Sid": "LambdaECRImageRetrievalPolicy",
+                        "Effect": "Allow",
+                        "Principal": {"Service": "lambda.amazonaws.com"},
+                        "Action": [
+                            "ecr:BatchGetImage",
+                            "ecr:GetDownloadUrlForLayer",
+                        ],
+                        "Condition": {
+                            "StringLike": {
+                                "aws:sourceArn": f"arn:aws:lambda:{region}:{account_id}:function:*",
+                            }
+                        },
+                    }
+                ],
             }
         ),
     )

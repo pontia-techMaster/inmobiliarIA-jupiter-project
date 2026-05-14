@@ -1,6 +1,7 @@
 config:
   aws:region: eu-west-1
   aws:profile: inmo
-  process-user-prompt:lambda_memory_mb: 1024
-  process-user-prompt:lambda_timeout_seconds: 60
-  process-user-prompt:batch_size: 1
+  process-user-prompt:lambda_memory_mb: "1024"
+  process-user-prompt:lambda_timeout_seconds: "180"
+  process-user-prompt:batch_size: "1"
+encryptionsalt: v1:L3zKrVZ6SiY=:v1:kjDWyVs/PtnN+Nzu:6O0YX5SbIESWxLQh/pZrZRl2kDngUA==

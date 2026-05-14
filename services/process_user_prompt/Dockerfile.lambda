@@ -16,4 +16,8 @@ RUN uv export --package process_user_prompt --frozen --no-dev --no-emit-workspac
     pip install --no-cache-dir --target ${LAMBDA_TASK_ROOT} -r /tmp/requirements.txt && \
     pip install --no-cache-dir --target ${LAMBDA_TASK_ROOT} --no-deps ./shared ./services/process_user_prompt
 
+# Lambda's RIE expects to start in LAMBDA_TASK_ROOT (= /var/task); without
+# this reset the container errors out with Runtime.InvalidWorkingDir.
+WORKDIR ${LAMBDA_TASK_ROOT}
+
 CMD ["process_user_prompt.lambda_handler.handler"]
