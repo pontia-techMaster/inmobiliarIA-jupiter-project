@@ -1,11 +1,11 @@
-# Explicación del service ranking_and_rendering
+# Explicación del Servicio `ranking_and_rendering`
 
 Este archivo resume y explica de manera técnica el servicio de `ranking_and_rendering` del proyecto.
 
-## Propósito y responsabilidades
+## Propósito y Responsabilidades
 El servicio `ranking_and_rendering` es un microservicio consumidor de eventos que implementa lógica de reordenamiento personalizado para búsquedas inmobiliarias, aplicando reglas específicas para cada uno de las condiciones solicitadas por el usuario.
 
-### Funcionamiento general del servicio
+### Funcionamiento General del Servicio
 
 El servicio implementa un **pipeline de reranking personalizado** que toma documentos ya recuperados por búsqueda vectorial y los reordena aplicando lógica de negocio específica. El flujo técnico es:
 
@@ -38,11 +38,11 @@ El servicio implementa un **pipeline de reranking personalizado** que toma docum
 - No expone una API HTTP directo.
 - No almacena estado persistenet.
 
-## Reglas de puntuación
+## Reglas de Puntuación
 
 La puntuación final de cada vivienda es una puntuación normalizada entre **0 y 1**. Cada atributo tiene un peso específico en la puntuación final. La puntuación proporcionada por la base de datos vectorial respecto a la similitud semántica también contribuye con un **10%** a la puntuación final.
 
-### Pesos por atributo (90% del total)
+En la tabla se presentan los pesos asignados a cada atributo, que suponen el 90% de la puntuación final.
 
 | Campo                  | Peso                  |
 |------------------------|-----------------------|
