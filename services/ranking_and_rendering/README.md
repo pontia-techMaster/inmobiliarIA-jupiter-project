@@ -137,3 +137,15 @@ Puntúa **0** si se ha solicitado ascensor y la vivienda no lo tiene. En cualqui
 ### Es exterior — `is_exterior`
 
 Se aplica exactamente la misma lógica que al atributo `has_elevator`.
+
+## Variables de Entorno
+
+| Variable | Valor por defecto | Notes |
+|--|--|--|
+| `SQS_ENDPOINT_URL`        | `http://localhost:9324`   | Endpoint de SQS |
+| `AWS_REGION`              | None                      | Región AWS |
+| `AWS_ACCESS_KEY_ID`       | None                      | AWS Access Key ID |
+| `AWS_SECRET_ACCESS_KEY`   | None                      | AWS Secret Acess Key |
+| `QUEUE_RANK_JOBS`         | `rank-jobs`               | Nombre de la cola de consumo |
+| `QDRANT_URL`              | `http://localhost:6333`   | Dirección de Qdrant |
+| `QDRANT_COLLECTION`       | `properties`              | Nombre de la colección en Qdrant |

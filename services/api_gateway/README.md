@@ -41,3 +41,13 @@ El flujo general es el siguiente:
    ```
    - El cliente usa este `request_id` para tener una **referencia de la solicitud** y poder **recuperar los resultados**.
    - La búsqueda ocurre **asíncronamente** en el backend.
+
+## Variables de Entorno
+
+| Variable | Valor por defecto | Notes |
+|--|--|--|
+| `SQS_ENDPOINT_URL`        | `http://localhost:9324`   | Endpoint de SQS |
+| `AWS_REGION`              | None                      | Región AWS |
+| `AWS_ACCESS_KEY_ID`       | None                      | AWS Access Key ID |
+| `AWS_SECRET_ACCESS_KEY`   | None                      | AWS Secret Acess Key |
+| `QUEUE_SEARCH_REQUESTS`   | `search-requests`               | Nombre de la cola de consumo |
