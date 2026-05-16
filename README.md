@@ -1,29 +1,37 @@
 # Proyecto Júpiter - InmobiliarIA
 
-## Scripts
+Este repositorio contiene el *codebase* del Trabajo Fin de Máster para el Máster de IA, Cloud Computing y DevOps de Pontia.
 
-En este directorio se almacenan scripts que tienen distintas funcionalidades.
+## Objetivo
 
-- `extract-property-data.py`: script encargado de extraer información estructurada de los archivos HTML fuente.
-- `generate-summary.py`: script que procesa las descripciones con LLM para generar un resumen normalizado. 
-- `generate-embeddings.py`: script que procesa las descripciones normalizadas y genera embeddings.
+Es un sistema de búsqueda de viviendas mediante lenguaje natural. El sistema extrae los requisitos impuestos por el usuario y realiza una búsqueda intensiva utilizando información semántica (criterios subjetivos) y filtros (traducibles a sentencias SQL). El sistema realiza un *reranking* para ordenar las viviendas extraídas en base a los requisitos impuestos por el usuario y a su importancia inferida.
 
-### `extract-property-data`
+La principal ventaja de este sistema frente a motores de búsqueda corrientes es la flexibilidad que ofrece al usuario para obtener resultados, evitando que se excluyan viviendas que superar ligeramente algunos de los márgenes impuestos pero que pueden ser de gran interés debido a que cumplen con el resto de requisitos.
 
-Este script se encarga de leer un directorio completo de archivos HTML para procesarlos, utilizando BeautifulSoup4.
+## Funcionamiento
 
-El resultado de este script es el mostrado en `data/parsed-properties.json`. Donde se almacena, entre otro tipo de información, atributos asociados a cada vivienda.
+El sistema es *event drived*. Se compone de varios servicios que se comunican mediante colas de mensajes. Un servicio escucha y publica en una o varias colas. Se ha adoptado esta arquitectura debido a que el sistema consta de servicios cuya funcionalidad es fácilmente divisible y diferenciable del resto, además de que permiten adoptar la filosofía *stateless*.
 
-### `generate-summary`
+El sistema se componene esencialmente de estos servicios:
 
-Este script recoge las descripciones extraídas de cada anunciante y se las envía a un LLM para que las resuma.
+- Servicio de ingesta de datos, `data_ingestion`. Se encarga de procesar información de una o varias fuentes de datos y de publicarlos en una base de datos vectorial.
+- Servicio de procesamiento del mensaje del usuario, `process_user_prompt`. Su cometido es procesar el mensaje crudo del usuario, de lenguaje natural, y obtener información estructurada, mediante el uso de un LLM.
+- Servicio de búsqueda vectorial, `vector_query`. Encargado de utilizar la información extraída del usuario para realizar la búsqueda vectorial.
+- Servicio de ranking, `ranking_and_rendering`. Su función es utilizar las viviendas encontradas en la búsqueda vectorial y los requisitos del usuario para asociar puntuaciones a cada vivienda y generar un nuevo ranking basado en esta nueva puntuación.
 
-Se ha utilizado el modelo `gemini-3.1-flash-lite-preview`, que tiene un tier gratuito de 500 peticiones al día y los resultados son bastante decentes pese a ser el modelo más simple. Se ha utilizado LangChain como framework por su fácil desarrollo. El *system prompt* utilizado se encuentra en `prompts/generate-summary-prompt.md`.
+Además se hace uso otros servicios que forman parte de la lógica de negocio desarrollada pero que son necesarios para que el sistema funcione en su conjunto. Estos servicios son:
 
-El resultado de este script se muestra en `data/normalized-descriptions.json`.
+- Gestor de colas y mensajes. En local usamos ElasticMQ debido a que es compatible con las interfaces de SQS de Amazon, que será el servicio usado en producción.
+- Servicio API que actúa como backend para la recepción de mensajes del usuario.
+- Un ligero frontend para mejorar la experiencia de usuario.
+- DynamoDB como base de datos no relacional, en local y en producción.
+- (Local) Qdrant como base de datos vectorial. En producción se hará uso de los servicios de Qdrant Cloud.
+- (Debugging) Un servicio de tracing para disponer de los logs de los servicios mencionados anteriormente.
 
-### `generate-embeddings`
+## Uso de Modelos
 
-Este script genera embeddings de las descripciones normalizadas. Se ha hecho uso del modelo `gemini-embeddings-001` (en modo `retrieval_document`) debido a que ofrece hasta 1000 peticiones diarias de manera gratuita. Al igual que con el modelo LLM de generación de resúmenes, se ha utilizado LangChain como framework.
+Algunos de los servicios mencionados hacen uso de modelos relacionados con la IA generativa y la búsqueda vectorial. En todos los casos en los que ha sido necesario, se ha hecho uso de LangChain, debido a su facilidad de manejo y que cumple con las necesidades del proyecto.
 
-El resultado de este script se muestra en `data/embeddings.json`.
+Los modelos utilizados han sido los modelos de Google, principalmente por sus buenos resultados y porque ofrecen un tier gratuito bastante generoso. Concretamente, se han utilizado los modelos `gemini-3.1-flash-lite-preview` y `gemini-embeddings-001` como LLM y modelo de embeddings, respectivamente.
+
+> El modelo `gemini-3.1-flash-lite-preview` será renombrado el 20 de mayo de 2026. Habrá que tenerlo en cuenta para futuras iteraciones.
