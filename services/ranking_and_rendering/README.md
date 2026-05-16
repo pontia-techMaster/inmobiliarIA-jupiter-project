@@ -31,13 +31,6 @@ El servicio implementa un **pipeline de reranking personalizado** que toma docum
 
 4. **Almacenamiento de resultados en base de datos**.
 
-### ¿Qué es lo que NO hace?
-- No realiza búsquedas vectoriales (esto es responsabildad del servicio `vector_query`).
-- No ejecuta análisis de prompts (esto es responsabilidad del servicoi `process_user_prompt`).
-- No ingesta, procesa ni genera embeddings (responsabilidad del servicio `data_ingestion`).
-- No expone una API HTTP directo.
-- No almacena estado persistenet.
-
 ## Reglas de Puntuación
 
 La puntuación final de cada vivienda es una puntuación normalizada entre **0 y 1**. Cada atributo tiene un peso específico en la puntuación final. La puntuación proporcionada por la base de datos vectorial respecto a la similitud semántica también contribuye con un **10%** a la puntuación final.
