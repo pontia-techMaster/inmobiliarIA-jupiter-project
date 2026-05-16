@@ -1,104 +1,110 @@
-# vector_query
+# Explicación del Servicio `vector_query`
 
-SQS worker that turns a structured search job into a list of candidate
-property IDs by running a filtered semantic search against Qdrant.
+Este archivo resume y explica de manera técnica el servicio de `ranking_and_rendering` del proyecto.
 
-```
-PromptFields  (SQS: query-jobs)
-     ↓ embed prompt → 768-dim vector
-     ↓ build Qdrant filter from structured fields
-     ↓ similarity search (top-K)
-RankJob  (SQS: rank-jobs)
-```
+## Propósito y Responsabilidades
+El servicio `vector_query` es un microservicio consumidor de eventos que implementa la lógica de búsqueda en base de datos vectorial, utilizando vectorización y composición de filtros de metadatos.
 
-## Inputs / outputs
+### Funcionamiento General del Servicio
 
-**Consumes** `query-jobs`:
+El flujo del servicio es el siguiente:
 
-```python
-PromptFields(
-    request_id: str,
-    prompt: str,                   # original natural-language query
-    fields: dict[str, Any],        # structured filters from process_user_prompt
-)
-```
+1. **Consume mensajes `ProcessUserPromptResponse` de SQS `query-jobs`** con estructura:
+   ```python
+   ProcessUserPromptResponse {
+     request_id: str, # identificador único de la búsqueda
+     prompt: str, # input original del usuario
+     fields: list[PromptField] # filtros del usuario estructurados (name, value, strength)
+     extra_info: str # información extra subjetiva extraída
+   }
+   ```
 
-**Publishes** `rank-jobs`:
+2. **Genera embeddings** del campo `extra_info` mediante LangChain y el modelo de embeddings de Google (`gemini-embeddings-001`).
 
-```python
-RankJob(
-    request_id: str,
-    doc_ids: list[str],            # idealista_ids, sorted by similarity desc
-    filters: dict[str, Any],       # echo of the input filters
-)
-```
+3. **Construye los filtros para Qdrant** usando los campos extraídos en el servicio anterior y aplicando reglas específicas para cada uno.
 
-## Files
+4. Realiza la **búsqueda por similitud sobre Qdrant** usando los vectores y los filtros de metadatos.
 
-```
-src/vector_query/
-├── handler.py          # orchestrator: embed → filter → search → pack
-├── embeddings.py       # re-exports embed_query from the shared `embeddings/` package
-├── filters.py          # PromptFields.fields → qdrant.Filter
-├── qdrant_store.py    # similarity-search wrapper
-└── worker.py           # SQS long-poll loop (calls handler.handle)
-```
+4. Publica un mensaje `RankJob` en SQS `rank-jobs`, con los IDs de los documentos extraídos y su puntuación semántica.
 
-`worker.py` is the local-dev entrypoint. Lambda packaging will add a sibling
-`lambda_handler.py` — see [docs/VECTOR_QUERY.md](../../docs/VECTOR_QUERY.md#phase-2--lambda-packaging-not-done-yet).
+## Reglas de Construcción de Filtros
 
-## Filterable fields
+A continuación se explica la lógica definida para cada uno de los atributos.
 
-`filters.build()` recognises:
+### Tipo de propiedad — `property_type`
 
-| Key                                         | Type   | Filter           |
-|---------------------------------------------|--------|------------------|
-| `district`, `neighborhood`,                 | str    | exact match      |
-| `property_type`, `property_subtype`         |        |                  |
-| `min_price` / `max_price` → `price`         | int    | range (gte/lte)  |
-| `min_rooms` / `max_rooms` → `rooms`         | int    | range            |
-| `min_surface` / `max_surface` → `surface`   | int    | range            |
+Se buscarán viviendas cuyo valor coincida con alguno de los valores aportados por el usuario. Es decir, se aplicará una cláusula OR.
 
-Unknown keys are logged and ignored. Values must match the payload schema
-that `data_ingestion` writes to Qdrant — see
-[docs/VECTOR_QUERY.md](../../docs/VECTOR_QUERY.md#what-needs-agreement-with-your-teammate-ingestion-contract)
-for the contract.
+### Localización — `location`
 
-## Configuration (env vars)
+Se procesa cada uno de los valores por separado y se resuelve la localización usando **rapidfuzz**. Cada localización resuelta se procesa:
 
-| Variable             | Default                  | Notes                                                     |
-|----------------------|--------------------------|-----------------------------------------------------------|
-| `SQS_ENDPOINT_URL`   | `http://localhost:9324`  | ElasticMQ locally, real SQS in cloud                      |
-| `QDRANT_URL`         | `http://localhost:6333`  | Local container or Qdrant Cloud                           |
-| `QDRANT_COLLECTION`  | `properties`             | Must match `data_ingestion`                               |
-| `TOP_K`              | `20`                     | Candidates returned for ranking                           |
-| `GEMINI_API_KEY`     | (unset)                  | Real Gemini if set, deterministic stub vector if not      |
+- Si es **`hard`**:
+  - Si la localización resuelta es de tipo *neighborhood*, se toma el valor y se añade a la lista de valores para *neighborhood*.
+  - Si la localización resuelta es de tipo *district*, se toma el valor y se añade a la lista de valores para *district*.
+- Si es **`soft`**:
+  - Si la localización resuelta es de tipo *neighborhood*, se toma el valor del distrito al que pertenece y se añade a la lista de valores para *district*.
+  - Si la localización resuelta es de tipo *district*, se toma el valor y se añade a la lista de valores para *district*.
 
-## Run locally
+Finalmente se aplica una cláusula OR para cada elemento de las listas, usando la clave *district* o *neighborhood* según corresponda.
 
-From repo root:
+**Ejemplo:**
 
-```bash
-make up          # infra + all services (vector_query included)
-make bootstrap   # seed Qdrant with 49 properties from Old/data
-make e2e         # POST /search and read the response — exercises the chain
-```
+| Valores aportados         | Dureza | Valores resueltos                                                | Filtros                                                              |
+|---------------------------|--------|------------------------------------------------------------------|----------------------------------------------------------------------|
+| `["Goya", "Carabanchel"]` | Hard   | Goya (`neighborhood`), Carabanchel (`district`)                  | `neighborhood=Goya` OR `district=Carabanchel`                        |
+| `["Goya", "Carabanchel"]` | Soft   | Goya (`neighborhood`, parent=`Barrio de Salamanca`), Carabanchel (`district`) | `district=Barrio de Salamanca` OR `district=Carabanchel` |
 
-Trace one container:
+### Número de habitaciones — `rooms`
 
-```bash
-docker logs vector_query --tail 20
-```
+Se procesa la entrada y se toma el valor mínimo de los proporcionados (el menos restrictivo).
 
-## Dependencies
+- **Hard**: se buscan viviendas con valor **≥** al proporcionado.
+- **Soft**: se buscan viviendas con valor **≥** al proporcionado aplicando un factor de corrección de **-1**.
 
-- [`shared`](../../shared) — message schemas, settings, SQS wrapper
-- [`embeddings`](../../embeddings) — Gemini wrapper (`embed_query`) with stub fallback
-- `qdrant-client` — Qdrant Python SDK
+### Número de baños — `bathrooms`
 
-## Further reading
+Se aplica exactamente la misma lógica que para el número de habitaciones, con su propio factor de corrección, cuyo valor es igualmente **-1**.
 
-- [`docs/VECTOR_QUERY.md`](../../docs/VECTOR_QUERY.md) — implementation notes,
-  contract with `data_ingestion`, known issues, Lambda packaging preview
-- [`docs/Architecture.md`](../../docs/Architecture.md) — overall system design
-- [`docs/DESARROLLO.md`](../../docs/DESARROLLO.md) — guía de desarrollo local
+### Superficie — `surface`
+
+Se procesa la entrada y se toma el valor mínimo de los proporcionados (el menos restrictivo).
+
+- **Hard**: se buscan viviendas con valor **≥** al proporcionado.
+- **Soft**: se aplica un factor de corrección porcentual y se utiliza el valor resultante para aplicar un filtro **≥**.
+
+El nuevo valor se calcula con la fórmula:
+
+$$
+\text{relaxed\_value} = \text{value} \times (1 - \text{COEF})
+$$
+
+donde el coeficiente para este campo se ha fijado en **15%**.
+
+### Precio — `price`
+
+Se procesa la entrada y se toma el valor máximo de los proporcionados (el menos restrictivo). Se aplica la misma lógica que para la superficie, pero el filtro utilizado es **≤** y el coeficiente se ha fijado en **10%**, sumándose al valor (en lugar de restarse).
+
+### Tiene ascensor — `has_elevator`
+
+Se toma el valor `True` únicamente si no hay presencia de `False` (mecanismo de seguridad). En cualquier otro caso, se toma `False`. Se buscarán viviendas cuyo valor sea **exactamente igual** al valor tomado.
+
+### Es exterior — `is_exterior`
+
+Se aplica exactamente la misma lógica que para la presencia o no de ascensor.
+
+
+## Variables de Entorno
+
+| Variable | Valor por defecto | Notes |
+|--|--|--|
+| `SQS_ENDPOINT_URL`        | `http://localhost:9324`   | Endpoint de SQS |
+| `AWS_REGION`              | None                      | Región AWS |
+| `AWS_ACCESS_KEY_ID`       | None                      | AWS Access Key ID |
+| `AWS_SECRET_ACCESS_KEY`   | None                      | AWS Secret Acess Key |
+| `QUEUE_QUERY_JOBS`        | `query-jobs`              | Nombre de la cola de consumo |
+| `QUEUE_RANK_JOBS`         | `rank-jobs`               | Nombre de la cola de publicación |
+| `QDRANT_URL`              | `http://localhost:6333`   | Dirección de Qdrant |
+| `QDRANT_COLLECTION`       | `properties`              | Nombre de la colección en Qdrant |
+| `QDRANT_TOP_K`            | `10`                      | Número de candidatos devueltos |
+| `GEMINI_API_KEY`          | None                      | API KEY de Gemini |
