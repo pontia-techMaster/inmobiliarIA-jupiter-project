@@ -75,9 +75,9 @@ Se procesa la entrada y se toma el valor mínimo de los proporcionados (el menos
 
 El nuevo valor se calcula con la fórmula:
 
-$$
+$`
 \text{relaxed\_value} = \text{value} \times (1 - \text{COEF})
-$$
+`$
 
 donde el coeficiente para este campo se ha fijado en **15%**.
 
