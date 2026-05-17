@@ -26,15 +26,7 @@ El servicio implementa una extracción de datos estructurados usando Langchain y
   }
   ```
 
-3. **Aplica lógica de ranking compleja** :
-   - Cada filtro (`price`, `rooms`, `location`, `surface`, `bathrooms`, `has_elevator`, `is_exterior`) es una función independiente.
-   - Aplica la lógica en función de su dureza (`strength`):
-     - **HARD filters**: Requisito obligatorio. Las propiedades que no cumplen quedan excluidas.
-     - **SOFT filters**: Preferencia. Penalizan pero no excluyen.
-   - Combina puntuación: `score_final = 90% (filtros personalizados) + 10% (score vectorial)`.
-   - Reordena documentos por score descendente.
-
-4. Publica un mensaje **ProcessUserPromptResponse** en SQS `query-jobs` con los campos extraídos y la información semántica.
+3. Publica un mensaje **ProcessUserPromptResponse** en SQS `query-jobs` con los campos extraídos y la información semántica.
 
 ## Campo extraído: `PromptField`
 
