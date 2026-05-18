@@ -46,6 +46,7 @@ def test_ingest_creates_collection_and_upserts(fake_property, monkeypatch):
         "settings",
         SimpleNamespace(
             qdrant_url="http://localhost:6333",
+            qdrant_api_key=None,
             qdrant_collection_name="properties",
         ),
     )
@@ -61,7 +62,7 @@ def test_ingest_creates_collection_and_upserts(fake_property, monkeypatch):
 
     assert result is None
 
-    mock_qdrant_client_class.assert_called_once_with(url="http://localhost:6333")
+    mock_qdrant_client_class.assert_called_once_with(url="http://localhost:6333", api_key=None)
 
     mock_client.collection_exists.assert_called_once_with(collection_name="properties")
 
@@ -107,6 +108,7 @@ def test_ingest_does_not_create_collection_when_exists(
         "settings",
         SimpleNamespace(
             qdrant_url="http://localhost:6333",
+            qdrant_api_key=None,
             qdrant_collection_name="properties",
         ),
     )
@@ -148,6 +150,7 @@ def test_ingest_raises_error_when_input_lengths_do_not_match(
         "settings",
         SimpleNamespace(
             qdrant_url="http://localhost:6333",
+            qdrant_api_key=None,
             qdrant_collection_name="properties",
         ),
     )
@@ -183,6 +186,7 @@ def test_ingest_raises_error_when_qdrant_upsert_fails(
         "settings",
         SimpleNamespace(
             qdrant_url="http://localhost:6333",
+            qdrant_api_key=None,
             qdrant_collection_name="properties",
         ),
     )

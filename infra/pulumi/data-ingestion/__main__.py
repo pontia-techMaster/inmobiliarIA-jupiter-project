@@ -230,9 +230,7 @@ aws.iam.RolePolicy(
 
 # Body is a literal JSON IngestJob with an s3:// source — the Lambda
 # parses it, syncs to /tmp, then calls handle().
-ingest_job_body = html_bucket_name.apply(
-    lambda b: f'{{"source":"s3://{b}/{s3_prefix}"}}'
-)
+ingest_job_body = html_bucket_name.apply(lambda b: f'{{"source":"s3://{b}/{s3_prefix}"}}')
 
 aws.cloudwatch.EventTarget(
     "ingest-schedule-target",

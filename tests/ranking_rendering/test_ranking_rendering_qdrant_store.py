@@ -22,6 +22,7 @@ def test_get_client_creates_qdrant_client_with_settings_url(monkeypatch):
         "settings",
         SimpleNamespace(
             qdrant_url="http://fake-qdrant:6333",
+            qdrant_api_key=None,
             qdrant_collection_name="properties",
         ),
     )
@@ -45,6 +46,7 @@ def test_get_client_reuses_existing_client(monkeypatch):
         "settings",
         SimpleNamespace(
             qdrant_url="http://fake-qdrant:6333",
+            qdrant_api_key=None,
             qdrant_collection_name="properties",
         ),
     )
@@ -77,6 +79,7 @@ def test_get_documents_calls_retrieve_with_expected_arguments(monkeypatch):
         "settings",
         SimpleNamespace(
             qdrant_url="http://fake-qdrant:6333",
+            qdrant_api_key=None,
             qdrant_collection_name="properties",
         ),
     )
@@ -120,6 +123,7 @@ def test_get_documents_converts_qdrant_records_to_dicts(monkeypatch):
         "settings",
         SimpleNamespace(
             qdrant_url="http://fake-qdrant:6333",
+            qdrant_api_key=None,
             qdrant_collection_name="properties",
         ),
     )
@@ -159,6 +163,7 @@ def test_get_documents_uses_empty_payload_when_payload_is_none(monkeypatch):
         "settings",
         SimpleNamespace(
             qdrant_url="http://fake-qdrant:6333",
+            qdrant_api_key=None,
             qdrant_collection_name="properties",
         ),
     )
@@ -188,6 +193,7 @@ def test_get_documents_preserves_point_id_type(monkeypatch):
         "settings",
         SimpleNamespace(
             qdrant_url="http://fake-qdrant:6333",
+            qdrant_api_key=None,
             qdrant_collection_name="properties",
         ),
     )
@@ -208,6 +214,7 @@ def test_get_documents_propagates_qdrant_error(monkeypatch):
         "settings",
         SimpleNamespace(
             qdrant_url="http://fake-qdrant:6333",
+            qdrant_api_key=None,
             qdrant_collection_name="properties",
         ),
     )

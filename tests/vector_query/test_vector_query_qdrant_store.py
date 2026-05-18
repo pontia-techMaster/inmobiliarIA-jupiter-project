@@ -29,6 +29,7 @@ def test_client_creates_qdrant_client_with_settings_url(monkeypatch):
         "settings",
         SimpleNamespace(
             qdrant_url="http://fake-qdrant:6333",
+            qdrant_api_key=None,
             qdrant_collection_name="properties",
         ),
     )
@@ -37,7 +38,7 @@ def test_client_creates_qdrant_client_with_settings_url(monkeypatch):
 
     assert result == fake_client
 
-    mock_qdrant_client_class.assert_called_once_with(url="http://fake-qdrant:6333")
+    mock_qdrant_client_class.assert_called_once_with(url="http://fake-qdrant:6333", api_key=None)
 
 
 def test_client_is_cached(monkeypatch):
@@ -57,6 +58,7 @@ def test_client_is_cached(monkeypatch):
         "settings",
         SimpleNamespace(
             qdrant_url="http://fake-qdrant:6333",
+            qdrant_api_key=None,
             qdrant_collection_name="properties",
         ),
     )
@@ -67,7 +69,7 @@ def test_client_is_cached(monkeypatch):
     assert first_client == fake_client
     assert second_client == fake_client
 
-    mock_qdrant_client_class.assert_called_once_with(url="http://fake-qdrant:6333")
+    mock_qdrant_client_class.assert_called_once_with(url="http://fake-qdrant:6333", api_key=None)
 
 
 def test_search_calls_query_points_with_expected_arguments(monkeypatch):
@@ -90,6 +92,7 @@ def test_search_calls_query_points_with_expected_arguments(monkeypatch):
         "settings",
         SimpleNamespace(
             qdrant_url="http://fake-qdrant:6333",
+            qdrant_api_key=None,
             qdrant_collection_name="properties",
         ),
     )
@@ -135,6 +138,7 @@ def test_search_returns_id_score_tuples(monkeypatch):
         "settings",
         SimpleNamespace(
             qdrant_url="http://fake-qdrant:6333",
+            qdrant_api_key=None,
             qdrant_collection_name="properties",
         ),
     )
@@ -168,6 +172,7 @@ def test_search_returns_empty_list_when_no_hits(monkeypatch):
         "settings",
         SimpleNamespace(
             qdrant_url="http://fake-qdrant:6333",
+            qdrant_api_key=None,
             qdrant_collection_name="properties",
         ),
     )
@@ -196,6 +201,7 @@ def test_search_propagates_qdrant_error(monkeypatch):
         "settings",
         SimpleNamespace(
             qdrant_url="http://fake-qdrant:6333",
+            qdrant_api_key=None,
             qdrant_collection_name="properties",
         ),
     )

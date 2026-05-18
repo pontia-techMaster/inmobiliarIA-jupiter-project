@@ -60,6 +60,9 @@ warn_return_any = false
 warn_unused_configs = true
 explicit_package_bases = true
 namespace_packages = true
+# Pulumi stacks each ship a `__main__.py`; mypy can't disambiguate them under
+# one project root. They're separate runtimes — not part of the service codebase.
+exclude = ["infra/pulumi/"]
 
 # ─── Pytest: testing ───────────────────────────────────────────────────────────
 [tool.pytest.ini_options]

@@ -6,6 +6,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, PointStruct, VectorParams
+from qdrant_client.models import PayloadSchemaType
 from shared.schemas import IngestJob
 from shared.settings import settings
 
@@ -84,17 +85,17 @@ def embed_all(descriptions: list[str], force: bool = False) -> list[list[float]]
 # Payload indexes vector_query needs to filter on. Qdrant doesn't index
 # payload fields by default — filtering on an unindexed field returns
 # "Bad request: Index required but not found".
-PAYLOAD_INDEXES: list[tuple[str, str]] = [
-    ("property_type", "keyword"),
-    ("is_exterior", "bool"),
-    ("has_elevator", "bool"),
-    ("location", "keyword"),
-    ("district", "keyword"),
-    ("neighborhood", "keyword"),
-    ("price", "integer"),
-    ("rooms", "integer"),
-    ("surface", "integer"),
-    ("bathrooms", "integer"),
+PAYLOAD_INDEXES: list[tuple[str, PayloadSchemaType]] = [
+    ("property_type", PayloadSchemaType.KEYWORD),
+    ("is_exterior", PayloadSchemaType.BOOL),
+    ("has_elevator", PayloadSchemaType.BOOL),
+    ("location", PayloadSchemaType.KEYWORD),
+    ("district", PayloadSchemaType.KEYWORD),
+    ("neighborhood", PayloadSchemaType.KEYWORD),
+    ("price", PayloadSchemaType.INTEGER),
+    ("rooms", PayloadSchemaType.INTEGER),
+    ("surface", PayloadSchemaType.INTEGER),
+    ("bathrooms", PayloadSchemaType.INTEGER),
 ]
 
 

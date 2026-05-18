@@ -18,6 +18,7 @@ import importlib.util
 from pathlib import Path
 
 from qdrant_client import QdrantClient
+from qdrant_client.models import PayloadSchemaType
 
 
 def _load_local_client() -> QdrantClient:
@@ -38,19 +39,19 @@ def _load_local_client() -> QdrantClient:
 _client = _load_local_client()
 
 # Field schemas — kept in lockstep with what vector_query.filters expects.
-INDEXES: list[tuple[str, str]] = [
+INDEXES: list[tuple[str, PayloadSchemaType]] = [
     # exact-match (keyword)
-    ("property_type", "keyword"),
-    ("is_exterior", "bool"),
-    ("has_elevator", "bool"),
-    ("location", "keyword"),
-    ("district", "keyword"),
-    ("neighborhood", "keyword"),
+    ("property_type", PayloadSchemaType.KEYWORD),
+    ("is_exterior", PayloadSchemaType.BOOL),
+    ("has_elevator", PayloadSchemaType.BOOL),
+    ("location", PayloadSchemaType.KEYWORD),
+    ("district", PayloadSchemaType.KEYWORD),
+    ("neighborhood", PayloadSchemaType.KEYWORD),
     # numeric range
-    ("price", "integer"),
-    ("rooms", "integer"),
-    ("surface", "integer"),
-    ("bathrooms", "integer"),
+    ("price", PayloadSchemaType.INTEGER),
+    ("rooms", PayloadSchemaType.INTEGER),
+    ("surface", PayloadSchemaType.INTEGER),
+    ("bathrooms", PayloadSchemaType.INTEGER),
 ]
 
 COLLECTION = "properties"
@@ -67,11 +68,11 @@ def main() -> None:
                 field_name=field,
                 field_schema=schema,
             )
-            print(f"  ✓ {field:<20} ({schema})")
+            print(f"  ✓ {field:<20} ({schema.value})")
         except Exception as e:
             # "already exists" / 409 / etc — fine, no-op.
             msg = str(e).splitlines()[0][:120]
-            print(f"  ⊘ {field:<20} ({schema})  — {msg}")
+            print(f"  ⊘ {field:<20} ({schema.value})  — {msg}")
 
 
 if __name__ == "__main__":
