@@ -1,7 +1,7 @@
 .PHONY: up down logs ps smoke sync post-search peek-search-requests api-dev e2e trigger-ingestion bootstrap fe-dev fe-build sqs-list sqs-peek sqs-purge sqs-send sqs-attrs
 
 sync:
-	uv sync --all-packages
+	uv sync --all-packages --all-groups 
 
 up:
 	docker compose --env-file .env -f infra/docker-compose.yml up -d --build

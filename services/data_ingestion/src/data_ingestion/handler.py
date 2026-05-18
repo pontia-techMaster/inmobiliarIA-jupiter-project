@@ -125,7 +125,7 @@ def ingest(properties: list[PropertyData], descriptions: list[str], embeddings: 
 
     points = [
         PointStruct(
-            id=prop.id,
+            id=prop.idealista_id or prop.id,
             vector=vector,
             payload={**{k: v for k, v in prop.to_dict().items() if k not in not_valid_attr}, "description": desc},
         )

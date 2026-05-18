@@ -55,3 +55,10 @@ dist/
 
 .claude
 .idea
+
+
+#coverage
+htmlcov/
+.coverage
+coverage.xml
+coverage.txt

@@ -9,12 +9,13 @@ from __future__ import annotations
 
 import logging
 from functools import lru_cache
+from uuid import UUID
 
 from qdrant_client import QdrantClient
 from qdrant_client.models import Filter
 from shared.settings import settings
 
-log = logging.getLogger("vector_query.qdrant_client")
+log = logging.getLogger("vector_query.qdrant_store")
 
 
 @lru_cache(maxsize=1)
@@ -23,7 +24,7 @@ def _client() -> QdrantClient:
     return QdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key or None)
 
 
-def search(vector: list[float], qfilter: Filter | None, k: int) -> list[tuple[str, float]]:
+def search(vector: list[float], qfilter: Filter | None, k: int) -> list[tuple[str | int | UUID, float]]:
     hits = (
         _client()
         .query_points(
@@ -35,4 +36,4 @@ def search(vector: list[float], qfilter: Filter | None, k: int) -> list[tuple[st
         )
         .points
     )
-    return [(str(hit.id), float(hit.score)) for hit in hits]
+    return [(hit.id, float(hit.score)) for hit in hits]

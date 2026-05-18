@@ -5,7 +5,7 @@ from typing import Any
 
 from shared.schemas import RankJob, SearchResponse
 
-from .qdrant_client import get_documents
+from .qdrant_store import get_documents
 from .ranker import rank
 
 log = logging.getLogger("ranking_and_rendering.handler")
@@ -18,11 +18,13 @@ def build_result_item(doc: dict[str, Any]) -> dict[str, Any]:
     payload = doc.get("payload", {})
     return {
         "id": doc["id"],
-        "title": payload.get("title", f"Propiedad {doc['id']}"),
         "price": payload.get("price"),
-        "city": payload.get("city"),
+        "street": payload.get("street"),
+        "neighborhood": payload.get("neighborhood"),
+        "district": payload.get("district"),
         "rooms": payload.get("rooms"),
-        "score": doc.get("score"),
+        "surface": payload.get("surface"),
+        "score": doc.get("computed_score"),
     }
 
 
@@ -33,6 +35,10 @@ def handle(job: RankJob) -> SearchResponse:
 
     # Retrieve full documents from Qdrant
     docs = get_documents(job.doc_ids)
+    docs = [doc | {"score": score} for doc, score in zip(docs, job.doc_scores, strict=True)]
+
+    log.debug("handle: received %d docs from Qdrant", len(docs))
+
     # Rerank based on filters
     ranked = rank(docs, job.fields)
     # Build the list of results for the frontend
