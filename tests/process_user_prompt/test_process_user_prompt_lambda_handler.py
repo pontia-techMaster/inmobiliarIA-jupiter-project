@@ -10,7 +10,6 @@ import json
 from unittest.mock import MagicMock
 
 import pytest
-
 from process_user_prompt import lambda_handler
 
 
