@@ -85,6 +85,12 @@ a.link:hover {
   margin-top: 0.25rem;
 }
 
+.id-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
 .status {
   margin-top: 2rem;
   padding: 1rem 1.25rem;

@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     queue_ingest_jobs: str = "ingest-jobs"
 
     qdrant_url: str = "http://localhost:6333"
+    qdrant_api_key: str = ""  # empty → no auth header (local Qdrant container)
     qdrant_collection_name: str = "properties"
     qdrant_top_k: int = 10
     dynamodb_endpoint_url: str = "http://localhost:8001"

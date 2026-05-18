@@ -1,0 +1,6 @@
+config:
+  aws:region: eu-west-1
+  aws:profile: inmo
+  api-gateway:cors_allow_origins:
+    - "*"
+encryptionsalt: v1:CXUDgtdB4vw=:v1:II2/0347m2z5hIf4:/g9Gr9o9BR55D5EpjvuzS7CzAzbG/w==

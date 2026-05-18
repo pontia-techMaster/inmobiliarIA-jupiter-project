@@ -8,6 +8,7 @@ so a handler that raises will leave the message visible again for redelivery.
 
 from __future__ import annotations
 
+import functools
 import logging
 from collections.abc import Iterator
 from typing import TypeVar
@@ -23,17 +24,25 @@ M = TypeVar("M", bound=BaseModel)
 
 
 def _client():
-    return boto3.client(
-        "sqs",
-        endpoint_url=settings.sqs_endpoint_url,
-        region_name=settings.aws_region,
-        aws_access_key_id=settings.aws_access_key_id,
-        aws_secret_access_key=settings.aws_secret_access_key,
-    )
+    # Local dev (ElasticMQ): pass endpoint + dummy creds explicitly.
+    # Cloud (Lambda): SQS_ENDPOINT_URL="" — let boto3 use the regional
+    # endpoint and pick up creds from the Lambda execution role.
+    kwargs: dict = {"region_name": settings.aws_region}
+    if settings.sqs_endpoint_url:
+        kwargs["endpoint_url"] = settings.sqs_endpoint_url
+        kwargs["aws_access_key_id"] = settings.aws_access_key_id
+        kwargs["aws_secret_access_key"] = settings.aws_secret_access_key
+    return boto3.client("sqs", **kwargs)
 
 
+@functools.lru_cache(maxsize=8)
 def _queue_url(name: str) -> str:
-    return f"{settings.sqs_endpoint_url}/000000000000/{name}"
+    """Resolve queue URL via the SQS API. Cached for the life of the process.
+
+    Works against both ElasticMQ and real SQS without hardcoding URL
+    formats. Costs one ``GetQueueUrl`` call per queue per cold start.
+    """
+    return _client().get_queue_url(QueueName=name)["QueueUrl"]
 
 
 def publish(queue_name: str, message: BaseModel) -> None:

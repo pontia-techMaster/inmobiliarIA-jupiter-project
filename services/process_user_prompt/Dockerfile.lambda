@@ -1,0 +1,23 @@
+FROM public.ecr.aws/lambda/python:3.12
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+WORKDIR /tmp/build
+
+# Bring the workspace lockfile + sources for the packages we actually need.
+COPY pyproject.toml uv.lock ./
+COPY shared ./shared
+COPY services/process_user_prompt ./services/process_user_prompt
+
+# Resolve transitive deps from the lockfile, then install everything into
+# LAMBDA_TASK_ROOT (= /var/task) so the Lambda runtime can import them.
+RUN uv export --package process_user_prompt --frozen --no-dev --no-emit-workspace \
+        --format requirements-txt -o /tmp/requirements.txt && \
+    pip install --no-cache-dir --target ${LAMBDA_TASK_ROOT} -r /tmp/requirements.txt && \
+    pip install --no-cache-dir --target ${LAMBDA_TASK_ROOT} --no-deps ./shared ./services/process_user_prompt
+
+# Lambda's RIE expects to start in LAMBDA_TASK_ROOT (= /var/task); without
+# this reset the container errors out with Runtime.InvalidWorkingDir.
+WORKDIR ${LAMBDA_TASK_ROOT}
+
+CMD ["process_user_prompt.lambda_handler.handler"]

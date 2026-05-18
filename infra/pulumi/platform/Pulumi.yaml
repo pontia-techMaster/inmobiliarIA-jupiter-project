@@ -1,0 +1,14 @@
+name: platform
+runtime:
+  name: python
+  options:
+    virtualenv: ../.venv
+    toolchain: uv
+description: |
+  Foundation stack — everything shared by service stacks:
+    - 5 SQS queues (matching shared/settings.py)
+    - ECR repos for Lambda services
+    - SSM Parameter Store entries
+    - CloudWatch log groups
+
+  No VPC — Lambdas run in AWS-managed networking.

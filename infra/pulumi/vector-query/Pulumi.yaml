@@ -1,0 +1,10 @@
+name: vector-query
+runtime:
+  name: python
+  options:
+    virtualenv: ../.venv
+    toolchain: uv
+description: |
+  Lambda (container image) that consumes query-jobs and runs the
+  vector_query service against Qdrant Cloud. Image is built from the
+  repo and pushed to ECR as part of `pulumi up`.
