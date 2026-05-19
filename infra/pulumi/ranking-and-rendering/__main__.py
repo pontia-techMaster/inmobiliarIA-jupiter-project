@@ -38,6 +38,12 @@ ssm_qdrant_arn = platform.ssm_qdrant_api_key_arn()
 ssm_qdrant_name = platform.ssm_qdrant_api_key_name()
 qdrant_url = platform.qdrant_url()
 
+search_results_table_name = platform.search_results_table_name()
+search_results_table_arn = platform.search_results_table_arn()
+
+user_searches_table_name = platform.user_searches_table_name()
+user_searches_table_arn = platform.user_searches_table_arn()
+
 repo_root = Path(__file__).resolve().parents[3]
 
 ecr_auth = aws.ecr.get_authorization_token_output()
@@ -127,6 +133,11 @@ aws.iam.RolePolicy(
                     "Action": ["ssm:GetParameter", "ssm:GetParameters"],
                     "Resource": ssm_qdrant_arn,
                 },
+                {
+                    "Effect": "Allow",
+                    "Action": ["dynamodb:PutItem"],
+                    "Resource": [search_results_table_arn, user_searches_table_arn],
+                },
             ],
         }
     ),
@@ -147,6 +158,11 @@ fn = aws.lambda_.Function(
             "QUEUE_SEARCH_RESPONSES": output_queue_url.apply(lambda u: u.split("/")[-1]),
             "QDRANT_API_KEY_PARAM": ssm_qdrant_name,
             "QDRANT_URL": qdrant_url,
+            # Setting this enables the DDB write in lambda_handler. Empty/unset
+            # = skip (used by local dev which doesn't have the table).
+            "SEARCH_RESULTS_TABLE": search_results_table_name,
+            "SEARCH_RESULTS_TTL_SECONDS": "300",
+            "USER_SEARCHES_TABLE": user_searches_table_name,
         },
     ),
     logging_config=aws.lambda_.FunctionLoggingConfigArgs(

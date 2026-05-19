@@ -63,6 +63,18 @@ class PlatformRef:
     def users_table_arn(self) -> pulumi.Output[str]:
         return self._r.require_output("users_table_arn")
 
+    def search_results_table_name(self) -> pulumi.Output[str]:
+        return self._r.require_output("search_results_table_name")
+
+    def search_results_table_arn(self) -> pulumi.Output[str]:
+        return self._r.require_output("search_results_table_arn")
+
+    def user_searches_table_name(self) -> pulumi.Output[str]:
+        return self._r.require_output("user_searches_table_name")
+
+    def user_searches_table_arn(self) -> pulumi.Output[str]:
+        return self._r.require_output("user_searches_table_arn")
+
 
 class ApiGatewayRef:
     """Outputs of the ``api-gateway`` stack."""

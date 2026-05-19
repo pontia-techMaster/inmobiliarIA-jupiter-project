@@ -1,0 +1,7 @@
+config:
+  aws:region: eu-west-1
+  aws:profile: inmo
+  github-oidc:repo: daniilabradorr/inmobiliarIA-jupiter-project
+  # Comma-separated git refs allowed to assume the role.
+  # Default: only workflow_dispatch runs from the main branch.
+  github-oidc:allowed_refs: refs/heads/main

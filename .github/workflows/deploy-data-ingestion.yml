@@ -1,0 +1,24 @@
+name: Deploy · data-ingestion
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "`preview` (dry-run) or `up` (apply)"
+        type: choice
+        default: preview
+        options: [preview, up]
+      stack:
+        description: "Pulumi stack (env)"
+        type: choice
+        default: dev
+        options: [dev]
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/_deploy-service.yml
+    secrets: inherit
+    with:
+      service: data-ingestion
+      stack: ${{ inputs.stack }}
+      action: ${{ inputs.action }}

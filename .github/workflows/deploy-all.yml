@@ -1,0 +1,92 @@
+name: Deploy · all
+
+# Manual full-stack deploy in dependency order:
+#   1. platform                                    (foundation)
+#   2. api-gateway + worker Lambdas in parallel    (all depend only on platform)
+#   3. results-api + frontend                      (depend on api-gateway)
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "`preview` (dry-run) or `up` (apply)"
+        type: choice
+        default: preview
+        options: [preview, up]
+      stack:
+        description: "Pulumi stack (env)"
+        type: choice
+        default: dev
+        options: [dev]
+
+jobs:
+  platform:
+    uses: ./.github/workflows/_deploy-service.yml
+    secrets: inherit
+    with:
+      service: platform
+      stack: ${{ inputs.stack }}
+      action: ${{ inputs.action }}
+
+  api-gateway:
+    needs: platform
+    uses: ./.github/workflows/_deploy-service.yml
+    secrets: inherit
+    with:
+      service: api-gateway
+      stack: ${{ inputs.stack }}
+      action: ${{ inputs.action }}
+
+  process-user-prompt:
+    needs: platform
+    uses: ./.github/workflows/_deploy-service.yml
+    secrets: inherit
+    with:
+      service: process-user-prompt
+      stack: ${{ inputs.stack }}
+      action: ${{ inputs.action }}
+
+  vector-query:
+    needs: platform
+    uses: ./.github/workflows/_deploy-service.yml
+    secrets: inherit
+    with:
+      service: vector-query
+      stack: ${{ inputs.stack }}
+      action: ${{ inputs.action }}
+
+  ranking-and-rendering:
+    needs: platform
+    uses: ./.github/workflows/_deploy-service.yml
+    secrets: inherit
+    with:
+      service: ranking-and-rendering
+      stack: ${{ inputs.stack }}
+      action: ${{ inputs.action }}
+
+  data-ingestion:
+    needs: platform
+    uses: ./.github/workflows/_deploy-service.yml
+    secrets: inherit
+    with:
+      service: data-ingestion
+      stack: ${{ inputs.stack }}
+      action: ${{ inputs.action }}
+
+  results-api:
+    needs: api-gateway
+    uses: ./.github/workflows/_deploy-service.yml
+    secrets: inherit
+    with:
+      service: results-api
+      stack: ${{ inputs.stack }}
+      action: ${{ inputs.action }}
+
+  frontend:
+    needs: api-gateway
+    uses: ./.github/workflows/_deploy-service.yml
+    secrets: inherit
+    with:
+      service: frontend
+      stack: ${{ inputs.stack }}
+      action: ${{ inputs.action }}
