@@ -1,0 +1,98 @@
+name: _deploy-service
+
+# Reusable workflow that runs `pulumi up` on a single Pulumi stack under
+# infra/pulumi/<service>/. Called by every per-service deploy workflow
+# and by deploy-all.yml.
+#
+# Expects (in the calling workflow or environment):
+#   secret  PULUMI_CONFIG_PASSPHRASE   — decrypts each stack's encryptionsalt
+#   var     AWS_OIDC_ROLE_ARN          — role created by infra/pulumi/github-oidc
+#   var     PULUMI_BACKEND_URL         — e.g. s3://inmo-dev-pulumi-state-<acct>?region=eu-west-1
+#
+# Repo variables can be set in Settings → Environments → dev.
+
+on:
+  workflow_call:
+    inputs:
+      service:
+        description: "Folder name under infra/pulumi/ to deploy"
+        type: string
+        required: true
+      stack:
+        description: "Pulumi stack name (matches Pulumi.<stack>.yaml)"
+        type: string
+        default: dev
+      action:
+        description: "`preview` (dry-run) or `up` (apply)"
+        type: string
+        default: preview
+
+permissions:
+  id-token: write   # required for AWS OIDC
+  contents: read
+
+jobs:
+  deploy:
+    name: pulumi ${{ inputs.action }} · ${{ inputs.service }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.stack }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_OIDC_ROLE_ARN }}
+          aws-region: eu-west-1
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Set up Node.js (for frontend Vite build)
+        if: inputs.service == 'frontend'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: services/frontend/package-lock.json
+
+      - name: Set up Pulumi
+        uses: pulumi/actions@v6
+
+      - name: Sync Python workspace
+        # Each Pulumi stack uses ../.venv (shared venv at infra/pulumi/.venv).
+        # We let Pulumi's `virtualenv` option drive creation, but pre-syncing
+        # the workspace pulls deps from the lockfile so `pulumi up` is fast.
+        run: uv sync --all-packages --no-dev
+        working-directory: ${{ github.workspace }}
+
+      - name: Pulumi login (S3 backend)
+        run: pulumi login "${PULUMI_BACKEND_URL}"
+        env:
+          PULUMI_BACKEND_URL: ${{ vars.PULUMI_BACKEND_URL }}
+
+      - name: Neutralize local-only aws:profile in stack config
+        # The committed Pulumi.dev.yaml sets `aws:profile: inmo` for local
+        # SSO. CI uses OIDC env credentials instead; the explicit profile
+        # would otherwise win and fail with "profile not found".
+        run: |
+          pulumi config rm aws:profile --stack "${{ inputs.stack }}" || true
+        working-directory: infra/pulumi/${{ inputs.service }}
+        env:
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+
+      - name: Pulumi preview
+        if: inputs.action == 'preview'
+        run: pulumi preview --stack "${{ inputs.stack }}"
+        working-directory: infra/pulumi/${{ inputs.service }}
+        env:
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+
+      - name: Pulumi up
+        if: inputs.action == 'up'
+        run: pulumi up --yes --stack "${{ inputs.stack }}"
+        working-directory: infra/pulumi/${{ inputs.service }}
+        env:
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}

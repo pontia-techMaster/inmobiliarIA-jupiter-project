@@ -218,6 +218,12 @@ export default function App() {
         <p className="tagline">Búsqueda inmobiliaria por lenguaje natural</p>
       </header>
 
+      <div className="workspace">
+        {history.length > 0 && (
+          <HistoryPanel items={history} activeRequestId={requestId} onPick={loadFromHistory} />
+        )}
+        <div className="workspace-main">
+
       <form onSubmit={onSubmit}>
         <label htmlFor="prompt">¿Qué tipo de vivienda buscas?</label>
         <textarea
@@ -232,10 +238,6 @@ export default function App() {
           {status.kind === "submitting" ? "Enviando…" : "Buscar"}
         </button>
       </form>
-
-      {history.length > 0 && (
-        <HistoryPanel items={history} activeRequestId={requestId} onPick={loadFromHistory} />
-      )}
 
       {status.kind === "polling" && (
         <section className="status status--polling">
@@ -338,6 +340,8 @@ export default function App() {
           </button>
         </section>
       )}
+        </div>
+      </div>
     </main>
   );
 }
@@ -356,7 +360,7 @@ function HistoryPanel({
   onPick: (item: HistoryItem) => void;
 }) {
   return (
-    <section className="history">
+    <aside className="history" aria-label="Tus búsquedas">
       <div className="history-label">
         <span>Tus búsquedas</span>
         <small>{items.length}</small>
@@ -369,21 +373,23 @@ function HistoryPanel({
             <li key={item.request_id}>
               <button
                 type="button"
-                className={`history-pill ${isActive ? "history-pill--active" : ""}`}
+                className={`history-row ${isActive ? "history-row--active" : ""}`}
                 onClick={() => onPick(item)}
                 disabled={!item.result}
                 title={item.prompt}
               >
                 <span className="history-prompt">{item.prompt || "(sin prompt)"}</span>
                 <span className="history-meta">
-                  {count} · {formatRelative(item.created_at)}
+                  <span>{count} {count === 1 ? "resultado" : "resultados"}</span>
+                  <span>·</span>
+                  <span>{formatRelative(item.created_at)}</span>
                 </span>
               </button>
             </li>
           );
         })}
       </ul>
-    </section>
+    </aside>
   );
 }
 

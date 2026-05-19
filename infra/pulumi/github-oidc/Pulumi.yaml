@@ -1,0 +1,14 @@
+name: github-oidc
+runtime:
+  name: python
+  options:
+    virtualenv: ../.venv
+    toolchain: uv
+description: |
+  IAM OIDC provider + role assumed by GitHub Actions to deploy other
+  stacks. Deploy this one *locally* (with the `inmo` SSO profile) before
+  enabling CI; from then on, the role lets GitHub run `pulumi up`
+  against every other stack without long-lived AWS keys.
+
+  One-time setup after `pulumi up`:
+    pulumi stack output role_arn         # → put in GitHub variable AWS_OIDC_ROLE_ARN

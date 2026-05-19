@@ -18,9 +18,24 @@ html, body {
 }
 
 .container {
-  max-width: 760px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 3.5rem 1.5rem 5rem;
+}
+
+/* Two-column workspace: history on the left, form + results on the right. */
+.workspace {
+  display: flex;
+  gap: 1.75rem;
+  align-items: flex-start;
+}
+
+.workspace-main {
+  flex: 1 1 auto;
+  min-width: 0;       /* let cards shrink in a flex container */
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .brand h1 {
@@ -141,7 +156,6 @@ button.link:hover {
 /* ── Status banners ───────────────────────────────────────────────────────── */
 
 .status {
-  margin-top: 2rem;
   padding: 1rem 1.25rem;
   border-radius: 10px;
   display: flex;
@@ -203,29 +217,32 @@ button.link:hover {
   100% { content: ""; }
 }
 
-/* ── Tus búsquedas (sticky horizontal history) ───────────────────────────── */
+/* ── Tus búsquedas (left sidebar, one row per search) ────────────────────── */
 
 .history {
+  flex: 0 0 280px;
   position: sticky;
-  top: 0;
-  z-index: 10;
-  margin-top: 1.5rem;
-  padding: 0.75rem 0;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
+  top: 1rem;
+  align-self: flex-start;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
 }
 
 .history-label {
   display: flex;
   align-items: baseline;
+  justify-content: space-between;
   gap: 0.4rem;
   font-weight: 600;
-  font-size: 0.85rem;
-  white-space: nowrap;
-  flex: 0 0 auto;
+  font-size: 0.9rem;
+  padding: 0 0.15rem;
 }
 
 .history-label small {
@@ -236,64 +253,62 @@ button.link:hover {
 .history-list {
   list-style: none;
   margin: 0;
-  padding: 0 0 0.25rem;  /* room for scrollbar without clipping pills */
+  padding: 0;
   display: flex;
-  gap: 0.5rem;
-  overflow-x: auto;
-  flex: 1 1 auto;
-  scrollbar-width: thin;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
-.history-pill {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 0.4rem 0.85rem;
+.history-row {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
   color: var(--text);
   font: inherit;
   font-size: 0.85rem;
-  font-weight: 500;
   cursor: pointer;
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  max-width: 280px;
+  flex-direction: column;
+  gap: 0.2rem;
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
-.history-pill:hover:not(:disabled) {
-  border-color: var(--primary);
+.history-row:hover:not(:disabled) {
   background: var(--bg);
+  border-color: var(--border);
 }
 
-.history-pill:disabled {
-  opacity: 0.55;
+.history-row:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-.history-pill--active {
+.history-row--active {
+  background: rgba(0, 113, 227, 0.10);
   border-color: var(--primary);
-  background: rgba(0, 113, 227, 0.08);
 }
 
 .history-prompt {
+  font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 200px;
 }
 
 .history-meta {
   color: var(--muted);
   font-size: 0.75rem;
-  font-weight: 500;
+  display: flex;
+  gap: 0.35rem;
   white-space: nowrap;
 }
 
 /* ── Results list ─────────────────────────────────────────────────────────── */
 
 .results {
-  margin-top: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -333,7 +348,6 @@ button.link:hover {
   position: relative;
   display: grid;
   grid-template-columns: 240px 1fr;
-  gap: 1.25rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -410,7 +424,7 @@ button.link:hover {
 .result-image {
   position: relative;
   background: #f0f0f3;
-  min-height: 180px;
+  min-height: 200px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -443,7 +457,7 @@ button.link:hover {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  padding: 1rem 1.25rem 1rem 0;
+  padding: 1rem 1.1rem 1.1rem;
   min-width: 0;
 }
 
@@ -666,20 +680,26 @@ button.link:hover {
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 
+/* Collapse the sidebar layout below medium widths so the cards keep
+   reasonable width on tablets and phones. */
+@media (max-width: 960px) {
+  .workspace {
+    flex-direction: column;
+  }
+  .history {
+    position: static;
+    flex: 0 0 auto;
+    max-height: 280px;
+  }
+}
+
 @media (max-width: 600px) {
   .container {
     padding: 2rem 1rem 4rem;
   }
-  .result-card {
+  .result-list {
     grid-template-columns: 1fr;
   }
-  .result-image {
-    min-height: 220px;
-  }
-  .result-body {
-    padding: 0 1.1rem 1.1rem;
-  }
-  .history-prompt { max-width: 140px; }
 }
 
 /* ── Dark mode ────────────────────────────────────────────────────────────── */
@@ -729,7 +749,7 @@ button.link:hover {
     color: white;
     border-color: #2c2c2e;
   }
-  .history-pill--active {
+  .history-row--active {
     background: rgba(0, 113, 227, 0.18);
   }
 }
