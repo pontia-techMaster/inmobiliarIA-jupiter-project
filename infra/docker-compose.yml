@@ -26,11 +26,13 @@ services:
   dynamodb:
     image: amazon/dynamodb-local:2.5.3
     container_name: dynamodb
-    command: -jar DynamoDBLocal.jar -sharedDb -dbPath /data
+    # In-memory mode for local dev — bind-mounted volume writes are
+    # painfully slow on Docker Desktop for Mac (5s+ per PutItem). The
+    # user-searches table is recreated automatically by api_gateway
+    # and ranking_and_rendering at startup, so volatile storage is fine.
+    command: -jar DynamoDBLocal.jar -sharedDb -inMemory
     ports:
       - "8001:8000"
-    volumes:
-      - dynamodb-data:/data
     networks:
       - inmo
 
@@ -91,9 +93,11 @@ services:
     environment:
       - SQS_ENDPOINT_URL=http://elasticmq:9324
       - QDRANT_URL=http://qdrant:6333
+      - DYNAMODB_ENDPOINT_URL=http://dynamodb:8000
     depends_on:
       - elasticmq
       - qdrant
+      - dynamodb
     restart: on-failure
     networks:
       - inmo
@@ -154,4 +158,3 @@ networks:
 
 volumes:
   qdrant-data:
-  dynamodb-data:

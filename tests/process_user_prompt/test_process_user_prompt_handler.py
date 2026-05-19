@@ -113,7 +113,9 @@ def test_handle_with_empty_fields(monkeypatch):
     mock_extract_data.assert_called_once_with(user_input="Quiero algo luminoso, tranquilo y cerca de zonas verdes")
 
 
-def test_handle_does_not_include_user_id_in_response(monkeypatch):
+def test_handle_propagates_user_id_into_response(monkeypatch):
+    """user_id is threaded end-to-end so ranking_and_rendering can write a row
+    against the right user in the user-searches table."""
     req = SearchRequest(
         request_id="req-789",
         prompt="Busco casa con jardín",
@@ -145,8 +147,7 @@ def test_handle_does_not_include_user_id_in_response(monkeypatch):
     assert result.request_id == "req-789"
     assert result.prompt == "Busco casa con jardín"
     assert result.extra_info == "Vivienda con jardín."
-
-    assert not hasattr(result, "user_id")
+    assert result.user_id == "user-999"
 
     mock_extract_data.assert_called_once_with(user_input="Busco casa con jardín")
 

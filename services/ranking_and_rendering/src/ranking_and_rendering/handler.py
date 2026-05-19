@@ -12,18 +12,29 @@ log = logging.getLogger("ranking_and_rendering.handler")
 
 
 def build_result_item(doc: dict[str, Any]) -> dict[str, Any]:
-    """Extract the fields we want to expose to the FE from each document.
-    Adjust according to the fields saved in Qdrant.
+    """Extract the fields we expose to the FE for each document.
+
+    Anything that's not in the Qdrant payload comes back as ``None`` and the
+    FE hides empty slots.
     """
     payload = doc.get("payload", {})
     return {
         "id": doc["id"],
         "price": payload.get("price"),
+        "property_type": payload.get("property_type"),
+        "property_subtype": payload.get("property_subtype"),
         "street": payload.get("street"),
         "neighborhood": payload.get("neighborhood"),
         "district": payload.get("district"),
         "rooms": payload.get("rooms"),
+        "bathrooms": payload.get("bathrooms"),
         "surface": payload.get("surface"),
+        "floor": payload.get("floor"),
+        "is_exterior": payload.get("is_exterior"),
+        "has_elevator": payload.get("has_elevator"),
+        "images": payload.get("images"),
+        "url": payload.get("url"),
+        "description": payload.get("description"),
         "score": doc.get("computed_score"),
     }
 

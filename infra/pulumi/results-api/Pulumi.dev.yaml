@@ -1,0 +1,6 @@
+config:
+  aws:region: eu-west-1
+  aws:profile: inmo
+  results-api:lambda_memory_mb: "256"
+  results-api:lambda_timeout_seconds: "10"
+encryptionsalt: v1:TMsm7e8eQME=:v1:5JPe8DpaigKGsKwK:h+xT3ddS7JWnh9hcXwJXX8HikQO2NQ==

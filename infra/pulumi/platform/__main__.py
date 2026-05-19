@@ -196,3 +196,49 @@ users_table = aws.dynamodb.Table(
 )
 pulumi.export("users_table_name", users_table.name)
 pulumi.export("users_table_arn", users_table.arn)
+
+# ── DynamoDB search-results table ─────────────────────────────────────────────
+# Short-lived store keyed by request_id, written by ranking_and_rendering and
+# read by results-api so the FE can poll for finished searches via HTTP.
+# TTL deletes rows ~5 min after their `expires_at` epoch second.
+search_results_table = aws.dynamodb.Table(
+    "search-results-table",
+    name=name("search-results"),
+    billing_mode="PAY_PER_REQUEST",
+    hash_key="request_id",
+    attributes=[aws.dynamodb.TableAttributeArgs(name="request_id", type="S")],
+    ttl=aws.dynamodb.TableTtlArgs(
+        attribute_name="expires_at",
+        enabled=True,
+    ),
+    tags=default_tags(),
+)
+pulumi.export("search_results_table_name", search_results_table.name)
+pulumi.export("search_results_table_arn", search_results_table.arn)
+
+# ── DynamoDB user-searches table ──────────────────────────────────────────────
+# Durable history of completed searches per user. Written by
+# ranking_and_rendering after publishing results; read by results-api for
+# ``GET /users/{user_id}/searches``. No TTL — kept until explicitly deleted.
+user_searches_table = aws.dynamodb.Table(
+    "user-searches-table",
+    name=name("user-searches"),
+    billing_mode="PAY_PER_REQUEST",
+    hash_key="user_id",
+    range_key="request_id",
+    attributes=[
+        aws.dynamodb.TableAttributeArgs(name="user_id", type="S"),
+        aws.dynamodb.TableAttributeArgs(name="request_id", type="S"),
+        aws.dynamodb.TableAttributeArgs(name="created_at", type="N"),
+    ],
+    local_secondary_indexes=[
+        aws.dynamodb.TableLocalSecondaryIndexArgs(
+            name="by-created-at",
+            range_key="created_at",
+            projection_type="ALL",
+        ),
+    ],
+    tags=default_tags(),
+)
+pulumi.export("user_searches_table_name", user_searches_table.name)
+pulumi.export("user_searches_table_arn", user_searches_table.arn)

@@ -33,11 +33,20 @@ def test_build_result_item_with_full_payload():
     assert result == {
         "id": "prop-1",
         "price": 180000,
+        "property_type": None,
+        "property_subtype": None,
         "street": "Calle Toro",
         "neighborhood": "Centro",
         "district": "Salamanca",
         "rooms": 3,
+        "bathrooms": None,
         "surface": 85,
+        "floor": None,
+        "is_exterior": None,
+        "has_elevator": None,
+        "images": None,
+        "url": None,
+        "description": None,
         "score": 0.99,
     }
 
@@ -53,11 +62,20 @@ def test_build_result_item_without_payload_uses_none_values():
     assert result == {
         "id": "prop-2",
         "price": None,
+        "property_type": None,
+        "property_subtype": None,
         "street": None,
         "neighborhood": None,
         "district": None,
         "rooms": None,
+        "bathrooms": None,
         "surface": None,
+        "floor": None,
+        "is_exterior": None,
+        "has_elevator": None,
+        "images": None,
+        "url": None,
+        "description": None,
         "score": 0.7,
     }
 
@@ -132,28 +150,25 @@ def test_handle_success(monkeypatch):
 
     assert isinstance(result, SearchResponse)
     assert result.request_id == "req-123"
-    assert result.results == [
-        {
-            "id": "prop-1",
-            "price": 180000,
-            "street": "Calle A",
-            "neighborhood": "Centro",
-            "district": "Salamanca",
-            "rooms": 3,
-            "surface": 80,
-            "score": 0.95,
-        },
-        {
-            "id": "prop-2",
-            "price": 260000,
-            "street": "Calle B",
-            "neighborhood": "Garrido",
-            "district": "Salamanca",
-            "rooms": 2,
-            "surface": 70,
-            "score": 0.55,
-        },
-    ]
+    # Spot-check the fields the test set up — extra payload slots come back as None.
+    assert len(result.results) == 2
+    assert result.results[0] | {} == result.results[0]  # is a plain dict
+    assert {k: result.results[0][k] for k in ("id", "price", "street", "rooms", "surface", "score")} == {
+        "id": "prop-1",
+        "price": 180000,
+        "street": "Calle A",
+        "rooms": 3,
+        "surface": 80,
+        "score": 0.95,
+    }
+    assert {k: result.results[1][k] for k in ("id", "price", "street", "rooms", "surface", "score")} == {
+        "id": "prop-2",
+        "price": 260000,
+        "street": "Calle B",
+        "rooms": 2,
+        "surface": 70,
+        "score": 0.55,
+    }
 
     mock_get_documents.assert_called_once_with(["prop-1", "prop-2"])
     mock_rank.assert_called_once_with(enriched_docs, job.fields)

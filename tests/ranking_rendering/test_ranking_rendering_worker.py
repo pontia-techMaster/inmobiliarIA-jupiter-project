@@ -26,6 +26,8 @@ def test_main_consumes_handles_and_publishes(monkeypatch):
     monkeypatch.setattr(worker, "consume", mock_consume)
     monkeypatch.setattr(worker, "handle", mock_handle)
     monkeypatch.setattr(worker, "publish", mock_publish)
+    monkeypatch.setattr(worker, "ensure_user_searches_table", lambda: None)
+    monkeypatch.setattr(worker, "put_user_search", MagicMock())
     monkeypatch.setattr(
         worker,
         "settings",
@@ -50,6 +52,8 @@ def test_main_without_messages_does_not_publish(monkeypatch):
     monkeypatch.setattr(worker, "consume", mock_consume)
     monkeypatch.setattr(worker, "handle", mock_handle)
     monkeypatch.setattr(worker, "publish", mock_publish)
+    monkeypatch.setattr(worker, "ensure_user_searches_table", lambda: None)
+    monkeypatch.setattr(worker, "put_user_search", MagicMock())
     monkeypatch.setattr(
         worker,
         "settings",
@@ -81,6 +85,8 @@ def test_main_propagates_handle_error(monkeypatch):
     monkeypatch.setattr(worker, "consume", mock_consume)
     monkeypatch.setattr(worker, "handle", mock_handle)
     monkeypatch.setattr(worker, "publish", mock_publish)
+    monkeypatch.setattr(worker, "ensure_user_searches_table", lambda: None)
+    monkeypatch.setattr(worker, "put_user_search", MagicMock())
     monkeypatch.setattr(
         worker,
         "settings",

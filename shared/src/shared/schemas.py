@@ -49,6 +49,7 @@ class ProcessUserPromptResponse(BaseModel):
     extra_info: str = Field(..., description="Descriptive subjective information to be embedded")
     request_id: str = Field(..., description="Correlates the whole search chain")
     prompt: str
+    user_id: str | None = None
 
 
 class ProcessUserPromptOutput(BaseModel):
@@ -65,6 +66,10 @@ class RankJob(BaseModel):
     doc_ids: list[int | UUID | str]
     doc_scores: list[float]
     fields: list[PromptField] = Field(default_factory=list, description="List of fields")
+    # The next two are carried end-to-end so ranking_and_rendering can write a
+    # complete row to the user-searches table without a re-fetch.
+    prompt: str = ""
+    user_id: str | None = None
 
 
 class SearchResponse(BaseModel):
