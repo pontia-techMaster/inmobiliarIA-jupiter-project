@@ -1,0 +1,25 @@
+[project]
+name = "process_user_prompt"
+version = "0.1.0"
+description = "SQS worker: extracts structured fields from a natural-language prompt (stubbed)"
+requires-python = ">=3.10"
+dependencies = [
+    "langchain-community>=0.4.1",
+    "langchain-core>=1.3.0",
+    "langchain-google-genai>=4.2.2",
+    "python-dotenv>=1.2.2",
+    "shared",
+]
+
+[tool.uv.sources]
+shared = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/process_user_prompt"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/process_user_prompt/system-prompt.md" = "process_user_prompt/system-prompt.md"

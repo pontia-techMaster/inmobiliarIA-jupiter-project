@@ -1,0 +1,10 @@
+name: process-user-prompt
+runtime:
+  name: python
+  options:
+    virtualenv: ../.venv
+    toolchain: uv
+description: |
+  Lambda (container image) that consumes search-requests and runs the
+  process_user_prompt service. Image is built from the repo and pushed
+  to ECR as part of `pulumi up`.

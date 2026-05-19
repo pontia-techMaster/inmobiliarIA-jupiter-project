@@ -1,0 +1,160 @@
+name: inmobiliaria
+
+services:
+  elasticmq:
+    image: softwaremill/elasticmq-native:1.5.7
+    container_name: elasticmq
+    ports:
+      - "9324:9324"
+      - "9325:9325"
+    volumes:
+      - ./elasticmq/elasticmq.conf:/opt/elasticmq.conf:ro
+    networks:
+      - inmo
+
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    container_name: qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant-data:/qdrant/storage
+    networks:
+      - inmo
+
+  dynamodb:
+    image: amazon/dynamodb-local:2.5.3
+    container_name: dynamodb
+    # In-memory mode for local dev — bind-mounted volume writes are
+    # painfully slow on Docker Desktop for Mac (5s+ per PutItem). The
+    # user-searches table is recreated automatically by api_gateway
+    # and ranking_and_rendering at startup, so volatile storage is fine.
+    command: -jar DynamoDBLocal.jar -sharedDb -inMemory
+    ports:
+      - "8001:8000"
+    networks:
+      - inmo
+
+  api_gateway:
+    build:
+      context: ..
+      dockerfile: services/api_gateway/Dockerfile
+    container_name: api_gateway
+    environment:
+      - SQS_ENDPOINT_URL=http://elasticmq:9324
+      - QDRANT_URL=http://qdrant:6333
+      - DYNAMODB_ENDPOINT_URL=http://dynamodb:8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - elasticmq
+    restart: on-failure
+    networks:
+      - inmo
+
+  process_user_prompt:
+    build:
+      context: ..
+      dockerfile: services/process_user_prompt/Dockerfile
+    container_name: process_user_prompt
+    environment:
+      - SQS_ENDPOINT_URL=http://elasticmq:9324
+      - GEMINI_API_KEY=${GEMINI_API_KEY-}
+    depends_on:
+      - elasticmq
+    restart: on-failure
+    networks:
+      - inmo
+
+  vector_query:
+    build:
+      context: ..
+      dockerfile: services/vector_query/Dockerfile
+    container_name: vector_query
+    environment:
+      - SQS_ENDPOINT_URL=http://elasticmq:9324
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_COLLECTION=${QDRANT_COLLECTION:-properties}
+      - TOP_K=${TOP_K:-20}
+      - GEMINI_API_KEY=${GEMINI_API_KEY-}
+    depends_on:
+      - elasticmq
+      - qdrant
+    restart: on-failure
+    networks:
+      - inmo
+
+  ranking_and_rendering:
+    build:
+      context: ..
+      dockerfile: services/ranking_and_rendering/Dockerfile
+    container_name: ranking_and_rendering
+    environment:
+      - SQS_ENDPOINT_URL=http://elasticmq:9324
+      - QDRANT_URL=http://qdrant:6333
+      - DYNAMODB_ENDPOINT_URL=http://dynamodb:8000
+    depends_on:
+      - elasticmq
+      - qdrant
+      - dynamodb
+    restart: on-failure
+    networks:
+      - inmo
+
+  frontend:
+    build:
+      context: ../services/frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - VITE_TRACER_URL=http://localhost:9000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../services/frontend/src:/app/src
+      - ../services/frontend/index.html:/app/index.html
+    depends_on:
+      - api_gateway
+    restart: on-failure
+    networks:
+      - inmo
+
+  tracer:
+    build:
+      context: ..
+      dockerfile: services/tracer/Dockerfile
+    container_name: tracer
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: on-failure
+    networks:
+      - inmo
+
+  data_ingestion:
+    build:
+      context: ..
+      dockerfile: services/data_ingestion/Dockerfile
+    container_name: data_ingestion
+    environment:
+      - SQS_ENDPOINT_URL=http://elasticmq:9324
+      - QDRANT_URL=http://qdrant:6333
+      - GEMINI_API_KEY=${GEMINI_API_KEY-}
+    volumes:
+      - ../data/source_html:/data/html:ro
+    depends_on:
+      - elasticmq
+      - qdrant
+    restart: on-failure
+    networks:
+      - inmo
+
+networks:
+  inmo:
+    driver: bridge
+
+volumes:
+  qdrant-data:

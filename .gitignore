@@ -4,22 +4,16 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
 # Entornos virtuales
 venv/
 .venv/
 env/
 ENV/
-
+secrets
 # =========================
 # Jupyter / notebooks
 # =========================
 .ipynb_checkpoints/
-
-# =========================
-# VS Code
-# =========================
-.vscode/
 
 # =========================
 # Archivos del sistema
@@ -42,6 +36,7 @@ Thumbs.db
 htmlcov/
 .tox/
 .mypy_cache/
+.ruff_cache
 
 # =========================
 # Build / packaging
@@ -56,3 +51,14 @@ dist/
 .env
 .env.*
 *.env
+
+
+.claude
+.idea
+
+
+#coverage
+htmlcov/
+.coverage
+coverage.xml
+coverage.txt

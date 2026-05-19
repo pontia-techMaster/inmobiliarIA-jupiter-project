@@ -1,0 +1,11 @@
+name: results-api
+runtime:
+  name: python
+  options:
+    virtualenv: ../.venv
+    toolchain: uv
+description: |
+  Tiny zip-packaged Lambda that backs `GET /results/{request_id}` on the
+  existing HTTP API. Reads the search-results DynamoDB row written by
+  ranking_and_rendering; returns 200 with the result JSON, or 404 if the
+  request_id isn't there yet.

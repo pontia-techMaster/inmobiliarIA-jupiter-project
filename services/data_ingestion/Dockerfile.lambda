@@ -1,0 +1,20 @@
+FROM public.ecr.aws/lambda/python:3.12
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+WORKDIR /tmp/build
+
+COPY pyproject.toml uv.lock ./
+COPY shared ./shared
+COPY services/data_ingestion ./services/data_ingestion
+
+RUN uv export --package data_ingestion --frozen --no-dev --no-emit-workspace \
+        --format requirements-txt -o /tmp/requirements.txt && \
+    pip install --no-cache-dir --target ${LAMBDA_TASK_ROOT} -r /tmp/requirements.txt && \
+    pip install --no-cache-dir --target ${LAMBDA_TASK_ROOT} --no-deps ./shared ./services/data_ingestion
+
+# Lambda's RIE expects to start in LAMBDA_TASK_ROOT (= /var/task); without
+# this reset the container errors out with Runtime.InvalidWorkingDir.
+WORKDIR ${LAMBDA_TASK_ROOT}
+
+CMD ["data_ingestion.lambda_handler.handler"]

@@ -1,0 +1,7 @@
+config:
+  aws:region: eu-west-1
+  aws:profile: inmo
+  ranking-and-rendering:lambda_memory_mb: "512"
+  ranking-and-rendering:lambda_timeout_seconds: "30"
+  ranking-and-rendering:batch_size: "1"
+encryptionsalt: v1:Z9Y4hhybsiQ=:v1:pB0WwWZtSayB9FCa:tU7czYq6NxVKhxBv5ME8ppkJO93u4Q==

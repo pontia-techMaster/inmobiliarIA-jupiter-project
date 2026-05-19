@@ -1,0 +1,9 @@
+name: frontend
+runtime:
+  name: python
+  options:
+    virtualenv: ../.venv
+    toolchain: uv
+description: |
+  S3 + CloudFront for the React app. Builds the FE with VITE_API_URL
+  pointing at the api-gateway endpoint, then syncs the dist/ to S3.
