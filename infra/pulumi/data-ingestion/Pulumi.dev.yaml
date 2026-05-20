@@ -9,4 +9,4 @@ config:
   data-ingestion:schedule_expression: "cron(0 3 ? * MON *)"
   # S3 prefix the Lambda will read on each scheduled run.
   data-ingestion:s3_prefix: "html/"
-encryptionsalt: v1:4SZesbkhVFk=:v1:T5ycYnR2ou+9UVhE:2c3+CXuZWBYCZOLv5RQoN+FkNpVY6Q==
+encryptionsalt: v1:cmnsnuYOWQ4=:v1:FdhoxgAV2DucEnEV:3qeZmGezmwHzXToXaF3VPyS8Ces5kw==

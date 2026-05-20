@@ -32,6 +32,7 @@ def test_get_client_creates_qdrant_client_with_settings_url(monkeypatch):
     assert result == fake_client
     mock_qdrant_client_class.assert_called_once_with(
         url="http://fake-qdrant:6333",
+        api_key=None,
         check_compatibility=False,
     )
 

@@ -12,10 +12,12 @@ El servicio implementa un **pipeline de reranking personalizado** que toma docum
 1. **Consume mensajes `RankJob` de SQS `rank-jobs`** con estructura:
    ```python
    RankJob {
-     request_id: str, # identificador único de la búsqueda
-     doc_ids: list[str] # IDs de documentos devueltos por vector_query
-     doc_scores: list[float], # scores vectoriales (0.0-1.0) de similitud semántica
-     fields: list[PromptField] # filtros del usuario estructurados (name, value, strength)
+     request_id: str       # identificador único de la búsqueda
+     doc_ids: list[str]    # IDs de documentos devueltos por vector_query
+     doc_scores: list[float]  # scores vectoriales (0.0-1.0) de similitud semántica
+     fields: list[PromptField]  # filtros del usuario estructurados (name, value, strength)
+     prompt: str           # prompt original del usuario (propagado)
+     user_id: str | None   # id anónimo del usuario (propagado)
    }
    ```
 
@@ -29,7 +31,13 @@ El servicio implementa un **pipeline de reranking personalizado** que toma docum
    - Combina puntuación: `score_final = 90% (filtros personalizados) + 10% (score vectorial)`.
    - Reordena documentos por score descendente.
 
-4. **Almacenamiento de resultados en base de datos**.
+4. **Publica `SearchResponse` en SQS `search-responses`** con la lista de propiedades rankeadas. Cada elemento contiene los campos extraídos del payload Qdrant: `id`, `price`, `property_type`, `property_subtype`, `street`, `neighborhood`, `district`, `rooms`, `bathrooms`, `surface`, `floor`, `is_exterior`, `has_elevator`, `images`, `url`, `description`, `score`. Campos ausentes en el payload vuelven como `None`.
+
+5. **Persistencia para el FE (cloud y dual-write):**
+   - Escribe el `SearchResponse` completo en la tabla DynamoDB `search-results` (PK=`request_id`, TTL 5 min) — es lo que sirve el endpoint `GET /results/{id}` para el polling del frontend.
+   - Si el `RankJob` trae `user_id`, escribe una fila duradera en la tabla DynamoDB `user-searches` (PK=`user_id`, SK=`request_id`, LSI por `created_at`) — esto alimenta el panel "Tus búsquedas" del FE.
+
+   Ambas escrituras son *best-effort*: una excepción de DynamoDB se registra y se ignora para no bloquear el flujo principal de la búsqueda.
 
 ## Reglas de Puntuación
 
@@ -138,14 +146,24 @@ Puntúa **0** si se ha solicitado ascensor y la vivienda no lo tiene. En cualqui
 
 Se aplica exactamente la misma lógica que al atributo `has_elevator`.
 
+## Runtime: worker (local) vs Lambda (cloud)
+
+- **Local (`worker.py`):** `consume(rank-jobs) → handle → publish(search-responses)` en bucle infinito. Hace un `ensure_user_searches_table()` al arrancar para crear la tabla DDB en local si no existe.
+- **Cloud (`lambda_handler.py`):** resuelve `QDRANT_API_KEY` desde SSM al cold-start. Escribe a las tablas `SEARCH_RESULTS_TABLE` y `USER_SEARCHES_TABLE` (env vars vienen del stack Pulumi).
+
 ## Variables de Entorno
 
-| Variable | Valor por defecto | Notes |
-|--|--|--|
-| `SQS_ENDPOINT_URL`        | `http://localhost:9324`   | Endpoint de SQS |
-| `AWS_REGION`              | None                      | Región AWS |
-| `AWS_ACCESS_KEY_ID`       | None                      | AWS Access Key ID |
-| `AWS_SECRET_ACCESS_KEY`   | None                      | AWS Secret Acess Key |
-| `QUEUE_RANK_JOBS`         | `rank-jobs`               | Nombre de la cola de consumo |
-| `QDRANT_URL`              | `http://localhost:6333`   | Dirección de Qdrant |
-| `QDRANT_COLLECTION`       | `properties`              | Nombre de la colección en Qdrant |
+| Variable | Valor por defecto | Notas |
+|---|---|---|
+| `SQS_ENDPOINT_URL` | `http://localhost:9324` | ElasticMQ local; vacío en cloud |
+| `DYNAMODB_ENDPOINT_URL` | `http://localhost:8001` | DynamoDB Local; vacío en cloud |
+| `AWS_REGION` / `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | — | Credenciales (dummy en local) |
+| `QUEUE_RANK_JOBS` | `rank-jobs` | Cola de consumo |
+| `QUEUE_SEARCH_RESPONSES` | `search-responses` | Cola de publicación |
+| `QDRANT_URL` | `http://localhost:6333` | Endpoint de Qdrant |
+| `QDRANT_API_KEY` | — | Requerido en cloud (Qdrant Cloud); vacío en local |
+| `QDRANT_API_KEY_PARAM` | — | (Solo cloud) nombre del SSM parameter |
+| `QDRANT_COLLECTION` | `properties` | Nombre de la colección |
+| `SEARCH_RESULTS_TABLE` | — | (Solo cloud) Nombre de la tabla DDB con TTL 5 min para el polling del FE |
+| `SEARCH_RESULTS_TTL_SECONDS` | `300` | TTL de la fila en `search-results` |
+| `USER_SEARCHES_TABLE` | `user-searches` | Tabla DDB del historial persistente |

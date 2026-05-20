@@ -4,4 +4,4 @@ config:
   process-user-prompt:lambda_memory_mb: "1024"
   process-user-prompt:lambda_timeout_seconds: "180"
   process-user-prompt:batch_size: "1"
-encryptionsalt: v1:L3zKrVZ6SiY=:v1:kjDWyVs/PtnN+Nzu:6O0YX5SbIESWxLQh/pZrZRl2kDngUA==
+encryptionsalt: v1:hkE3DiMSVeI=:v1:dna0er+mETruMPvj:L8xpvpG7Z0P7GY5MvYH/0IOV9CWm4Q==

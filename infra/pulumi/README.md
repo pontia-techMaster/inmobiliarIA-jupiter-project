@@ -1,219 +1,181 @@
 # Pulumi microstacks — InmobiliarIA Júpiter
 
-Cloud infrastructure for the project, organised as small composable
-stacks. See [`docs/architecture2.md`](../../docs/architecture2.md) for
-the cloud topology this provisions and
-[`docs/deployment-status.md`](../../docs/deployment-status.md) for the
-living deploy tracker.
+Infraestructura cloud organizada como **stacks pequeños y componibles** — uno por servicio, más fundación + state + OIDC.
 
 ## Layout
 
 ```
 .
-├── pyproject.toml             shared deps for every stack (one venv)
+├── pyproject.toml             deps compartidas (un solo venv para todos los stacks)
 ├── uv.lock
-├── Makefile                   one-shot deploy + per-stack wrappers
-├── _shared/                   python helpers: naming, tags, stack refs
-├── _bootstrap/                S3 state bucket + DDB lock (LOCAL backend)
-├── platform/                  SQS, ECR, SSM, CloudWatch, S3 source, DynamoDB
-├── api-gateway/               HTTP API + SQS service integration
+├── Makefile                   despliegue one-shot + wrappers por stack
+├── _shared/                   helpers: naming, tags, stack refs
+├── _bootstrap/                S3 state bucket + DDB lock (backend LOCAL — chicken-and-egg)
+├── github-oidc/               IAM OIDC provider + role para GitHub Actions
+├── platform/                  SQS · ECR · SSM · CloudWatch · S3 source · DDB users · DDB search-results · DDB user-searches
+├── api-gateway/               HTTP API + integración directa SQS
+├── results-api/               Lambda zip que sirve GET /results/{id} y GET /users/{id}/searches
 ├── frontend/                  S3 + CloudFront
-├── process-user-prompt/       Lambda + SQS event source mapping
-├── vector-query/              Lambda + ESM (Qdrant query)
-├── ranking-and-rendering/     Lambda + ESM (Qdrant fetch + rerank)
+├── process-user-prompt/       Lambda + ESM (extracción estructurada con Gemini)
+├── vector-query/              Lambda + ESM (búsqueda Qdrant)
+├── ranking-and-rendering/     Lambda + ESM (Qdrant fetch + reranking + escritura a DDB)
 └── data-ingestion/            Lambda + ESM + EventBridge cron
 ```
 
-Eight deployable stacks. `_bootstrap` and `_shared` are special:
-`_bootstrap` uses the LOCAL Pulumi backend (chicken-and-egg — it
-creates the S3 bucket every other stack uses); `_shared` is a regular
-Python package used by all other stacks via `import _shared`.
+**10 stacks desplegables.** `_bootstrap` y `_shared` son especiales:
 
-## Prerequisites
+- `_bootstrap` usa el backend **LOCAL** de Pulumi (chicken-and-egg: crea el bucket S3 que los demás stacks usan como backend).
+- `_shared` no es un stack, es un paquete Python usado por todos vía `import _shared`.
 
-- **AWS CLI** with an SSO profile named **`inmo`** pointing at the
-  deploy account. Every `Pulumi.dev.yaml` pins `aws:profile: inmo`,
-  and the Makefile also `export`s `AWS_PROFILE=inmo` so the AWS Go SDK
-  resolves the right credentials. SSO sessions last ~8h; refresh with
-  `aws sso login --profile inmo` when expired.
+## Dos caminos de despliegue
 
-  First-time setup:
-  ```bash
-  aws configure sso --profile inmo
-  # session name:        pontia
-  # SSO start URL:       https://pontia.awsapps.com/start    (no #fragment)
-  # SSO region:          eu-west-1
-  # registration scopes: (leave blank → default sso:account:access)
-  # browser opens, approve, pick account + AdministratorAccess role
-  # CLI region:          eu-west-1
-  # output format:       json
-  # profile name:        inmo
-  aws --profile inmo sts get-caller-identity   # confirm right account
-  ```
+### Camino A: GitHub Actions (recomendado para deploys normales)
 
-- **Pulumi CLI**: `brew install pulumi/tap/pulumi`.
-- **Docker daemon** running — service stacks build Lambda container
-  images via `pulumi-docker-build`.
-- **Node 20+** — the `frontend` stack runs `npm install && npm run build`.
+CI usa **OIDC** contra AWS — sin claves de larga duración en GitHub. El stack `github-oidc` crea el role; las variables y secrets del entorno `dev` los introduce un admin del repo una sola vez.
 
-The `check-sso` Make target acts as a preflight on every cloud-touching
-command, so an expired SSO session fails fast with a friendly message
-rather than silently falling back to other creds.
+Ver [§ CI/CD setup](#cicd-setup) más abajo.
 
-## One-time setup (per developer)
+Workflows en `.github/workflows/`:
+
+| Workflow | Cuándo usarlo |
+|---|---|
+| `Deploy · platform` | Cuando cambian colas, ECR, SSM o tablas DynamoDB |
+| `Deploy · api-gateway` | Cuando cambia el HTTP API o la integración SQS |
+| `Deploy · process-user-prompt` / `vector-query` / `ranking-and-rendering` / `data-ingestion` | Cambios en cada Lambda de servicio |
+| `Deploy · results-api` | Cambios en el handler de polling/historial |
+| `Deploy · frontend` | Cambios en el FE (build + sync a S3) |
+| `Deploy · all` | Full-stack en orden de dependencias |
+
+Cada workflow acepta dos inputs:
+
+- `action`: `preview` (dry-run, por defecto) o `up` (aplica los cambios).
+- `stack`: `dev`.
+
+### Camino B: Pulumi local (iteración rápida o primer setup)
 
 ```bash
 cd infra/pulumi
+make install            # crea venv con Pulumi + plugins
+make state-init         # crea el bucket S3 de estado (solo la primera vez por cuenta)
+make login-remote       # cambia el CLI al backend S3 (autodescubre el bucket)
 
-# 1. Create venv with Pulumi + plugins
-make install
-
-# 2. Initialize remote state — uses LOCAL backend (chicken-and-egg)
-#    Creates `inmo-dev-pulumi-state-<account-id>` (S3) + DDB lock table.
-make state-init
-
-# 3. Switch the Pulumi CLI to the S3 backend.
-#    Auto-discovers the bucket name from the inmo profile's account id;
-#    no env var to set by hand.
-make login-remote
+make deploy-all                       # despliegue completo
+make up STACK=vector-query            # un solo stack
+make preview STACK=vector-query       # dry-run
+make outputs STACK=api-gateway        # ver outputs en JSON
 ```
 
-Subsequent teammates skip step 2 (state bucket already exists in the
-account) — just `make install` + `make login-remote`.
+## CI/CD setup
 
-## Full deploy (recommended)
+**One-time, lo hace un admin del repo:**
 
-One target deploys everything in dependency order, prompting for any
-SSM SecureString that's still a placeholder:
+1. Despliega el stack `github-oidc` localmente (con SSO `inmo`). Si la cuenta ya tiene un proveedor OIDC de GitHub, set `pulumi config set existing_provider_arn '<arn>'` antes de `pulumi up` para reutilizarlo.
+2. Captura el `role_arn` que el stack exporta.
+3. En GitHub → Settings → Environments → `dev`, configura:
+   - Variable `AWS_OIDC_ROLE_ARN` = `role_arn` del paso anterior.
+   - Variable `PULUMI_BACKEND_URL` = `s3://inmo-dev-pulumi-state?region=eu-west-1`.
+   - Secret `PULUMI_CONFIG_PASSPHRASE` = el passphrase que protege los `encryptionsalt` de los stacks.
+4. Lista para usarse: ve a Actions, escoge un workflow y dispara `Run workflow`.
 
-```bash
-make deploy-all
-```
+**Trust policy:** el role solo es asumible por workflows ejecutándose en este repo desde **main** (configurable vía `github-oidc:allowed_refs` — soporta `refs/heads/<branch>` y `environment:<env>`).
 
-Sequence:
+## Prerequisites (deploy local)
 
-1. `platform` — creates SQS queues, ECR repos, SSM placeholders, log
-   groups, S3 HTML source bucket, DynamoDB users table.
-2. **Prompts** (input hidden) for `inmo-dev-gemini-api-key` and
-   `inmo-dev-qdrant-api-key`. Skips any that's already set to a non-
-   placeholder value. Set them later with `make prompt-secrets`.
-3. `api-gateway`, then the 4 service Lambdas (`process-user-prompt`,
-   `vector-query`, `ranking-and-rendering`, `data-ingestion`), then
-   `frontend`. Each builds + pushes its container image to ECR.
-4. Prints the CloudFront URL + API Gateway endpoint at the end.
+- **AWS CLI** con un perfil SSO llamado **`inmo`** apuntando a la cuenta de despliegue. Los `Pulumi.dev.yaml` referencian este perfil. Sesión SSO ~8h; refrescar con `aws sso login --profile inmo`.
 
-Re-runnable: Pulumi diffs each stack and no-ops on unchanged
-resources. If a stack fails the run aborts with a hint to fix and
-re-run.
+  Primera vez:
+  ```bash
+  aws configure sso --profile inmo
+  # SSO start URL:   https://pontia.awsapps.com/start
+  # SSO region:      eu-west-1
+  # CLI region:      eu-west-1
+  # output format:   json
+  # profile name:    inmo
+  aws --profile inmo sts get-caller-identity   # confirma cuenta
+  ```
 
-### Per-stack deploy (when iterating on one service)
+- **Pulumi CLI**: `brew install pulumi/tap/pulumi`.
+- **Docker** corriendo — los stacks de servicio construyen imágenes Lambda vía `pulumi-docker-build`.
+- **Node 20+** — el stack `frontend` corre `npm install && npm run build`.
 
-```bash
-make up STACK=vector-query        # pulumi up on one stack
-make preview STACK=vector-query   # pulumi preview (no changes applied)
-make outputs STACK=api-gateway    # JSON of stack outputs
-make destroy STACK=frontend       # destroy a single stack
-```
+El target `make check-sso` valida la sesión SSO antes de cada comando cloud.
 
-## Stacks (deploy graph)
+## Grafo de dependencias entre stacks
 
 ```
 _bootstrap                                   (S3 state bucket + DDB lock)
     │
+github-oidc                                  (IAM role para CI — no depende de nada más)
+    │
 platform                                     (SQS · ECR · SSM · CloudWatch ·
-    │                                         S3 source · DDB users)
+    │                                         S3 source · DDB users · search-results · user-searches)
     ├── api-gateway                          (HTTP API → SQS:search-requests)
-    │       │
-    │       └── frontend                     (S3 + CloudFront, reads api endpoint)
+    │       ├── results-api                  (Lambda zip → GET /results/{id} · /users/{id}/searches)
+    │       └── frontend                     (S3 + CloudFront, lee endpoint del api-gateway)
     │
     ├── process-user-prompt                  (SQS:search-requests → query-jobs)
     ├── vector-query                         (SQS:query-jobs → rank-jobs + Qdrant)
-    ├── ranking-and-rendering                (SQS:rank-jobs → search-responses + Qdrant)
+    ├── ranking-and-rendering                (SQS:rank-jobs → search-responses + Qdrant + DDB writes)
     └── data-ingestion                       (SQS:ingest-jobs + EventBridge cron + S3)
 ```
 
-## Day-2 ops
+## Day-2 ops (Makefile)
 
-| Target | What it does |
+| Target | Qué hace |
 |---|---|
-| `make deploy-all` | Full deploy in order (idempotent) |
-| `make destroy-all` | Reverse-order destroy of every stack except `_bootstrap`. Type `destroy` to confirm |
-| `make prompt-secrets` | Re-prompt for Gemini / Qdrant keys (only if still `REPLACE_ME`) |
-| `make show-cloud-resources` | Print live FE/API URLs + console deep-links for every service |
-| `make aws-logs` (or `SERVICE=<name>`) | Live-tail one Lambda's CloudWatch log group (default `process-user-prompt`) |
-| `make fe-invalidate` | Flush CloudFront cache for the frontend distribution after `make up STACK=frontend` |
-| `make seed-html` | Sync `services/data_ingestion/data/source_html/` → S3 ingestion bucket |
-| `make trigger-ingestion` | Publish an `IngestJob` to `ingest-jobs` so the Lambda processes the S3 prefix on demand (otherwise it runs on the EventBridge cron, Mondays 03:00 UTC) |
-| `make check-sso` | Verify the `inmo` SSO session is alive. All cloud targets depend on this |
+| `make deploy-all` | Despliegue completo en orden (idempotente) |
+| `make destroy-all` | Destrucción en orden inverso (excepto `_bootstrap`); pide confirmación |
+| `make prompt-secrets` | Re-pregunta por Gemini/Qdrant keys si siguen siendo `REPLACE_ME` |
+| `make show-cloud-resources` | Imprime URLs y deep-links a consola para cada servicio |
+| `make aws-logs SERVICE=<name>` | `tail -f` del log group de un Lambda (default `process-user-prompt`) |
+| `make fe-invalidate` | Flush manual del cache de CloudFront del FE tras `make up STACK=frontend` |
+| `make seed-html` | Sincroniza `services/data_ingestion/data/source_html/` → bucket de ingesta |
+| `make trigger-ingestion` | Publica un `IngestJob` para procesar el prefijo S3 a demanda |
+| `make check-sso` | Valida la sesión SSO `inmo` |
 
-## Adding a new service stack
+## Tablas DynamoDB (creadas por `platform`)
 
-1. Copy `process-user-prompt/` to `<service>/`.
-2. Edit `Pulumi.yaml` (project name, description).
-3. Edit `__main__.py`:
-   - Change `SERVICE` constant at the top.
-   - Change the input queue (e.g. `platform.queue_arn("query-jobs")`)
-     and output queue to whatever this service consumes/produces.
-   - Update the IAM policy to scope SQS perms to those queues.
-4. Add a `Dockerfile.lambda` next to the service code (template:
-   `services/process_user_prompt/Dockerfile.lambda`). Key bits:
+| Tabla | PK | SK | Notas |
+|---|---|---|---|
+| `inmo-dev-users` | `user_id` | — | Stub para un futuro microservicio de usuario |
+| `inmo-dev-search-results` | `request_id` | — | TTL 5 min. Escrito por `ranking_and_rendering`, leído por `results-api` para el polling del FE |
+| `inmo-dev-user-searches` | `user_id` | `request_id` | Sin TTL — historial persistente. LSI `by-created-at` para listar más recientes primero |
+
+## Añadir un nuevo stack de servicio
+
+1. Copia `process-user-prompt/` a `<service>/`.
+2. Edita `Pulumi.yaml` (project name, description).
+3. Edita `__main__.py`:
+   - Cambia la constante `SERVICE`.
+   - Cambia la cola de entrada (`platform.queue_arn("query-jobs")`) y de salida.
+   - Ajusta la policy IAM para permisos SQS de esas colas.
+4. Añade `Dockerfile.lambda` junto al código (template: `services/process_user_prompt/Dockerfile.lambda`). Claves:
    - `FROM public.ecr.aws/lambda/python:3.12`
-   - Install deps into `${LAMBDA_TASK_ROOT}` via uv export → pip
-   - **End with `WORKDIR ${LAMBDA_TASK_ROOT}`** — otherwise Lambda
-     errors out with `Runtime.InvalidWorkingDir`.
-5. Add `lambda_handler.py` next to `worker.py` in the service src.
-   At cold-start it should fetch any needed secrets from SSM and set
-   them as env vars before importing `handler.py`.
-6. **Set the cloud env vars on the Lambda** — see
-   [`docs/architecture2.md` § Service runtime config](../../docs/architecture2.md#service-runtime-config--local-vs-cloud)
-   for the full table. At minimum:
-   - `SQS_ENDPOINT_URL=""` so `shared/sqs.py` uses real SQS.
-   - `QUEUE_<OUTPUT>=<actual-cloud-queue-name>` for every queue the
-     service writes to.
-7. Add the service to `platform/Pulumi.dev.yaml` `services:` list and
-   re-run `make up STACK=platform` so the ECR repo + log group exist.
-8. `make up STACK=<service>` — or just `make deploy-all`.
+   - Instala deps en `${LAMBDA_TASK_ROOT}` vía `uv export → pip`.
+   - **Termina con `WORKDIR ${LAMBDA_TASK_ROOT}`** — si no, Lambda peta con `Runtime.InvalidWorkingDir`.
+5. Añade `lambda_handler.py` al src del servicio. En el cold-start debe traer secretos de SSM y exportarlos como env vars antes de importar `handler.py`.
+6. Configura las env vars del Lambda. Como mínimo:
+   - `SQS_ENDPOINT_URL=""` para que `shared/sqs.py` use el SQS real.
+   - `QUEUE_<OUTPUT>=<nombre-de-cola>` para cada cola en la que escribe.
+7. Añade el servicio a `platform/Pulumi.dev.yaml` `services:` y reaplica `make up STACK=platform` para crear su ECR repo + log group.
+8. Crea un workflow nuevo en `.github/workflows/deploy-<service>.yml` (copia uno existente).
+9. `make up STACK=<service>` o dispara el workflow.
 
-## Quirks worth knowing
+## Quirks que conviene conocer
 
-- **`AWS_PROFILE=inmo` is exported by the Makefile.** With SSO, the
-  Go SDK can silently fall back to your default profile if `inmo`
-  isn't found in env. The Make-level export prevents that.
-- **`pulumi-docker-build` (0.0.15) doesn't expose `provenance`/`sbom`
-  as direct kwargs.** We pass them via `exports=[ExportArgs(raw=…)]`
-  to disable both — Lambda only accepts plain image manifests, not
-  the OCI image-index format buildx defaults to. Each service's
-  `__main__.py` includes the workaround.
-- **Lambda `image_uri` must be `<repo>@<digest>` OR `<repo>:<tag>`,
-  not the combined `<repo>:<tag>@<digest>` that `image.ref` returns.**
-  All service stacks build the digest-pinned form manually.
-- **ECR repos need a `RepositoryPolicy`** allowing
-  `lambda.amazonaws.com` to `BatchGetImage` + `GetDownloadUrlForLayer`
-  in the same account. Without it, `CreateFunction` fails with the
-  cryptic "Source image is not valid". `platform/__main__.py` wires
-  this for every ECR repo it creates.
-- **CloudFront caches the FE at the edge** for ~24h. After
-  `make up STACK=frontend`, run `make fe-invalidate` to flush.
-- **`ingest-jobs` queue has `visibility_timeout_seconds=3600`**
-  (vs 60s for the other queues) because `data_ingestion`'s Lambda
-  timeout is 600s and AWS requires queue visibility ≥ function
-  timeout.
-- **`make state-init` and `make destroy-all` are gated on a typed
-  confirmation** (`destroy` for the latter) so you can't trigger them
-  by accident.
+- **`AWS_PROFILE=inmo` lo exporta el Makefile.** Con SSO, el Go SDK puede caer silenciosamente al perfil default si `inmo` no está en env.
+- **`pulumi-docker-build` (0.0.15) no expone `provenance`/`sbom` como kwargs.** Los pasamos vía `exports=[ExportArgs(raw=…)]` — Lambda solo acepta manifests planos, no el OCI image-index que buildx genera por defecto.
+- **`image_uri` del Lambda debe ser `<repo>@<digest>` o `<repo>:<tag>`**, no el combinado `<repo>:<tag>@<digest>` que devuelve `image.ref`. Cada stack de servicio lo construye explícitamente.
+- **Cada ECR repo necesita una `RepositoryPolicy`** que permita a `lambda.amazonaws.com` hacer `BatchGetImage` + `GetDownloadUrlForLayer`. Sin esto, `CreateFunction` falla con un críptico "Source image is not valid".
+- **CloudFront cachea el FE ~24h en el edge.** Tras desplegar el frontend, `make fe-invalidate` o `aws cloudfront create-invalidation --distribution-id <ID> --paths '/*'` para forzar la actualización.
+- **`ingest-jobs` tiene `visibility_timeout_seconds=3600`** (vs 60s las otras colas) porque el Lambda de ingesta tarda hasta 600s y AWS exige timeout ≥ función.
+- **`make state-init` y `make destroy-all` están gated** por confirmación tipeada — para no triggerearlos por accidente.
+- **El stack `github-oidc` puede reutilizar un OpenIdConnectProvider existente** (límite AWS: uno por URL de issuer por cuenta) — set `github-oidc:existing_provider_arn` en config.
 
 ## Tearing down
 
 ```bash
-make destroy-all     # reverse-order destroy of every stack except _bootstrap
-# Leave _bootstrap up unless you really mean to wipe the state bucket
-# — destroying it orphans every other stack's state record.
-```
-
-If you do want to nuke `_bootstrap` too:
-
-```bash
-make destroy STACK=_bootstrap     # destroys the state bucket + lock table
-                                  # Pulumi will lose track of any remaining
-                                  # state references in there
+make destroy-all     # destruye todo excepto _bootstrap
+# No destruyas _bootstrap salvo que quieras volver a empezar:
+# se pierde el state que apunta a todo lo demás.
 ```
