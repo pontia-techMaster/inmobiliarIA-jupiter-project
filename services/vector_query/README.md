@@ -1,6 +1,6 @@
 # Explicación del Servicio `vector_query`
 
-Este archivo resume y explica de manera técnica el servicio de `ranking_and_rendering` del proyecto.
+Este archivo resume y explica de manera técnica el servicio de `vector_query` del proyecto.
 
 ## Propósito y Responsabilidades
 El servicio `vector_query` es un microservicio consumidor de eventos que implementa la lógica de búsqueda en base de datos vectorial, utilizando vectorización y composición de filtros de metadatos.
@@ -25,7 +25,18 @@ El flujo del servicio es el siguiente:
 
 4. Realiza la **búsqueda por similitud sobre Qdrant** usando los vectores y los filtros de metadatos.
 
-4. Publica un mensaje `RankJob` en SQS `rank-jobs`, con los IDs de los documentos extraídos y su puntuación semántica.
+4. Publica un mensaje `RankJob` en SQS `rank-jobs`, con los IDs de los documentos extraídos, su puntuación semántica, y los campos propagados (`prompt`, `user_id`) que `ranking_and_rendering` necesitará para escribir la entrada en el historial del usuario:
+
+   ```python
+   RankJob {
+     request_id: str
+     doc_ids: list[int | UUID | str]
+     doc_scores: list[float]
+     fields: list[PromptField]
+     prompt: str                # propagado end-to-end
+     user_id: str | None        # propagado end-to-end
+   }
+   ```
 
 ## Reglas de Construcción de Filtros
 
@@ -94,17 +105,22 @@ Se toma el valor `True` únicamente si no hay presencia de `False` (mecanismo de
 Se aplica exactamente la misma lógica que para la presencia o no de ascensor.
 
 
+## Runtime: worker (local) vs Lambda (cloud)
+
+- **Local (`worker.py`):** `consume(query-jobs) → handle → publish(rank-jobs)` en un bucle infinito.
+- **Cloud (`lambda_handler.py`):** al cold-start resuelve `GEMINI_API_KEY` y `QDRANT_API_KEY` desde SSM Parameter Store antes de importar `handler.py` (los clientes de LangChain y Qdrant validan las keys al construirse).
+
 ## Variables de Entorno
 
-| Variable | Valor por defecto | Notes |
-|--|--|--|
-| `SQS_ENDPOINT_URL`        | `http://localhost:9324`   | Endpoint de SQS |
-| `AWS_REGION`              | None                      | Región AWS |
-| `AWS_ACCESS_KEY_ID`       | None                      | AWS Access Key ID |
-| `AWS_SECRET_ACCESS_KEY`   | None                      | AWS Secret Acess Key |
-| `QUEUE_QUERY_JOBS`        | `query-jobs`              | Nombre de la cola de consumo |
-| `QUEUE_RANK_JOBS`         | `rank-jobs`               | Nombre de la cola de publicación |
-| `QDRANT_URL`              | `http://localhost:6333`   | Dirección de Qdrant |
-| `QDRANT_COLLECTION`       | `properties`              | Nombre de la colección en Qdrant |
-| `QDRANT_TOP_K`            | `10`                      | Número de candidatos devueltos |
-| `GEMINI_API_KEY`          | None                      | API KEY de Gemini |
+| Variable | Valor por defecto | Notas |
+|---|---|---|
+| `SQS_ENDPOINT_URL` | `http://localhost:9324` | ElasticMQ local; vacío en cloud |
+| `AWS_REGION` / `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | — | Credenciales (dummy en local) |
+| `QUEUE_QUERY_JOBS` | `query-jobs` | Cola de consumo |
+| `QUEUE_RANK_JOBS` | `rank-jobs` | Cola de publicación |
+| `QDRANT_URL` | `http://localhost:6333` | Endpoint de Qdrant |
+| `QDRANT_API_KEY` | — | Vacío en local (Qdrant Docker sin auth); requerido en cloud (Qdrant Cloud) |
+| `QDRANT_COLLECTION` | `properties` | Nombre de la colección |
+| `QDRANT_TOP_K` | `10` | Número de candidatos devueltos |
+| `GEMINI_API_KEY` | — | API key de Gemini |
+| `GEMINI_API_KEY_PARAM` / `QDRANT_API_KEY_PARAM` | — | (Solo cloud) nombres de los SSM parameters |

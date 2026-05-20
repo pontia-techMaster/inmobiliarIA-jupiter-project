@@ -26,7 +26,17 @@ El servicio implementa una extracción de datos estructurados usando Langchain y
   }
   ```
 
-3. Publica un mensaje **ProcessUserPromptResponse** en SQS `query-jobs` con los campos extraídos y la información semántica.
+3. Publica un mensaje **ProcessUserPromptResponse** en SQS `query-jobs` con los campos extraídos, la información semántica, y el `user_id` propagado del request original (para que `ranking_and_rendering` pueda escribir el resultado en el historial del usuario):
+
+  ```python
+  ProcessUserPromptResponse {
+    request_id: str
+    prompt: str
+    fields: list[PromptField]
+    extra_info: str
+    user_id: str | None    # se propaga end-to-end por toda la cadena
+  }
+  ```
 
 ## Campo extraído: `PromptField`
 
@@ -58,14 +68,18 @@ El campo `extraction_context` es un campo puramente para *debugging* y define el
 
 Revisar `system-prompt.md` y `shared/schemas.json` para tener más información sobre el prompt utilizado y las restricciones del modelo.
 
+## Runtime: worker (local) vs Lambda (cloud)
+
+- **Local (`worker.py`):** `consume(search-requests) → handle → publish(query-jobs)` en un bucle infinito long-poll.
+- **Cloud (`lambda_handler.py`):** la misma `handle()` envuelta como handler Lambda. Al cold-start resuelve `GEMINI_API_KEY` desde SSM Parameter Store (env var `GEMINI_API_KEY_PARAM` apunta al nombre del parámetro) y la exporta como env var antes de importar `handler.py` (LangChain valida la key al importarse).
+
 ## Variables de Entorno
 
-| Variable | Valor por defecto | Notes |
-|--|--|--|
-| `SQS_ENDPOINT_URL`        | `http://localhost:9324`   | Endpoint de SQS |
-| `AWS_REGION`              | None                      | Región AWS |
-| `AWS_ACCESS_KEY_ID`       | None                      | AWS Access Key ID |
-| `AWS_SECRET_ACCESS_KEY`   | None                      | AWS Secret Acess Key |
-| `QUEUE_SEARCH_REQUESTS`   | `search-requests`         | Nombre de la cola de consumo |
-| `QUEUE_QUERY_JOBS`        | `query-jobs`              | Nombre de la cola de publicación |
-| `GEMINI_API_KEY`          | None                      | API KEY de Gemini |
+| Variable | Valor por defecto | Notas |
+|---|---|---|
+| `SQS_ENDPOINT_URL` | `http://localhost:9324` | ElasticMQ local; vacío en cloud |
+| `AWS_REGION` / `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | — | Credenciales (dummy en local) |
+| `QUEUE_SEARCH_REQUESTS` | `search-requests` | Cola de consumo |
+| `QUEUE_QUERY_JOBS` | `query-jobs` | Cola de publicación |
+| `GEMINI_API_KEY` | — | API key de Gemini |
+| `GEMINI_API_KEY_PARAM` | — | (Solo cloud) nombre del SSM parameter del que se resuelve la key |

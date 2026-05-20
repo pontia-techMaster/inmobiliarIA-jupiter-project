@@ -26,15 +26,23 @@ El servicio implementa un pipeline de extracción de datos, transformación e in
 
 5. Se ingesta la información en la base de datos vectorial, con los embeddings y los metadatos.
 
+## Runtime: worker (local) vs Lambda (cloud)
+
+- **Local (`worker.py`):** consume `ingest-jobs` on-demand. Lanzar manualmente con `make trigger-ingestion` para procesar el directorio `services/data_ingestion/data/source_html/`.
+- **Cloud (`lambda_handler.py`):** lo dispara una regla EventBridge (`Mondays 03:00 UTC`) o un mensaje manual a la cola. Por ser el más pesado de los Lambdas, su queue (`ingest-jobs`) tiene `visibility_timeout_seconds=3600` y el Lambda tiene `timeout=600`. La fuente de datos es S3 (`inmo-dev-html-source-<account>`).
+
+Al cold-start resuelve `GEMINI_API_KEY` y `QDRANT_API_KEY` desde SSM. Crea índices de payload en Qdrant (`property_type`, `is_exterior`, `has_elevator`) si no existen — necesarios para que `vector_query` pueda filtrar por esos campos.
+
 ## Variables de Entorno
 
-| Variable | Valor por defecto | Notes |
-|--|--|--|
-| `SQS_ENDPOINT_URL`        | `http://localhost:9324`   | Endpoint de SQS |
-| `AWS_REGION`              | None                      | Región AWS |
-| `AWS_ACCESS_KEY_ID`       | None                      | AWS Access Key ID |
-| `AWS_SECRET_ACCESS_KEY`   | None                      | AWS Secret Acess Key |
-| `QUEUE_INGEST_JOBS`       | `injest-jobs`             | Nombre de la cola de consumo |
-| `QDRANT_URL`              | `http://localhost:6333`   | Dirección de Qdrant |
-| `QDRANT_COLLECTION`       | `properties`              | Nombre de la colección en Qdrant |
-| `GEMINI_API_KEY`          | None                      | API KEY de Gemini |
+| Variable | Valor por defecto | Notas |
+|---|---|---|
+| `SQS_ENDPOINT_URL` | `http://localhost:9324` | ElasticMQ local; vacío en cloud |
+| `AWS_REGION` / `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | — | Credenciales (dummy en local) |
+| `QUEUE_INGEST_JOBS` | `ingest-jobs` | Cola de consumo |
+| `QDRANT_URL` | `http://localhost:6333` | Endpoint de Qdrant |
+| `QDRANT_API_KEY` | — | Requerido en cloud (Qdrant Cloud) |
+| `QDRANT_COLLECTION` | `properties` | Nombre de la colección |
+| `GEMINI_API_KEY` | — | API key de Gemini |
+| `HTML_SOURCE_BUCKET` | — | (Solo cloud) Bucket S3 con los HTML a procesar |
+| `GEMINI_API_KEY_PARAM` / `QDRANT_API_KEY_PARAM` | — | (Solo cloud) nombres de los SSM parameters |

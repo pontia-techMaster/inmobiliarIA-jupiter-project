@@ -1,53 +1,74 @@
-# Explicación del servicio `api_gateway`
+# Servicio `api_gateway`
 
-Este archivo resume y explica de manera técnica el servicio de `api_gateway` del proyecto.
+Puerta de entrada HTTP del sistema. En local es una app FastAPI; en cloud, el `POST /search` lo recibe API Gateway HTTP API directamente (sin pasar por código nuestro) y publica el mensaje en SQS vía integración nativa.
 
-## Propósito y Responsabilidades
+## Responsabilidades
 
-El servicio `api_gateway` es la **puerta de entrada HTTP** del sistema.Y sus responsabilidades son:
-- **Exponer un API REST** para que el frontend pueda publicar las búsquedas en lenguaje natural.
-- **Traducir requests HTTP** en eventos SQS para el pipeline asincrónico.
-- **Proporcionar trazabilidad** a través de `request_id` único.
-- **Coordinar la comunicación** entre cliente y microservicios backend.
+- **Exponer la API REST** que el frontend consume.
+- **Traducir requests HTTP a eventos SQS** (`POST /search` → `search-requests`).
+- **Servir el polling** del cliente (`GET /results/{id}`) — en local, leyendo de una cache en memoria alimentada por un consumer en background; en cloud, este endpoint lo sirve el stack `results-api`.
+- **Exponer el historial por usuario** (`GET /users/{id}/searches`) — local: lee DynamoDB Local; cloud: lo sirve `results-api`.
 
-### Funcionamiento General del Servicio
+## Endpoints
 
-El cometido principal de este servicio es exponer un endpoint que ofrezca al usuario la funcionalidad principal del sistema: hacer una búsqueda usando lenguaje natural.
+### `POST /search`
 
-El flujo general es el siguiente:
+```jsonc
+// Request
+{
+  "prompt": "Piso luminoso en Madrid, 3 hab, hasta 350k",
+  "user_id": "8fd9deec-…",       // opcional; el FE genera y persiste uno en localStorage
+  "request_id": "bb070b72-…"     // opcional; si lo manda el cliente, se respeta para trazabilidad
+}
+```
 
-1. **Expone `POST /search`** que recibe un prompt en lenguaje natural:
-   ```python
-   POST /search
-   {
-     "prompt": "Busco piso en Madrid, máx 500k, 3 habitaciones",
-     "user_id": "user-123"
-   }
-   ```
+```jsonc
+// Response
+{ "request_id": "bb070b72-…" }
+```
 
-2. **Publica `SearchRequest` en SQS `search-requests`**:
-   ```python
-   SearchRequest {
-     request_id: str, # UUID4 generado
-     prompt: str,
-     user_id: str | None}
-   ```
+Publica un `SearchRequest` con `request_id`, `prompt` y `user_id` en SQS `search-requests`. El cliente usa `request_id` para hacer polling.
 
-3. **Devuelve inmediatamente `SearchAck`** con el `request_id` al cliente:
-   ```json
-   {
-     "request_id": "7f2a9e1c-4d3b-11ec-81d0-0242ac130003"
-   }
-   ```
-   - El cliente usa este `request_id` para tener una **referencia de la solicitud** y poder **recuperar los resultados**.
-   - La búsqueda ocurre **asíncronamente** en el backend.
+### `GET /results/{request_id}`
 
-## Variables de Entorno
+- **200** con el `SearchResponse` completo si ya está listo.
+- **404** mientras la búsqueda esté en curso (el FE sigue polleando hasta 90 intentos × 2s).
 
-| Variable | Valor por defecto | Notes |
-|--|--|--|
-| `SQS_ENDPOINT_URL`        | `http://localhost:9324`   | Endpoint de SQS |
-| `AWS_REGION`              | None                      | Región AWS |
-| `AWS_ACCESS_KEY_ID`       | None                      | AWS Access Key ID |
-| `AWS_SECRET_ACCESS_KEY`   | None                      | AWS Secret Acess Key |
-| `QUEUE_SEARCH_REQUESTS`   | `search-requests`               | Nombre de la cola de consumo |
+**Local:** un thread en background consume `search-responses` y guarda cada mensaje en una cache en memoria (`ResultsStore`) con TTL de 10 min.
+**Cloud:** ranking_and_rendering escribe el resultado en la tabla DynamoDB `inmo-dev-search-results` (TTL 5 min) y la Lambda `results-api` lo sirve.
+
+### `GET /users/{user_id}/searches?limit=20`
+
+Devuelve hasta `limit` búsquedas más recientes del usuario, ordenadas por timestamp descendente. Lee de la tabla DynamoDB `user-searches` (PK=`user_id`, SK=`request_id`, LSI `by-created-at`).
+
+Schema de cada item:
+```jsonc
+{
+  "user_id": "…",
+  "request_id": "…",
+  "created_at": 1779270247,
+  "prompt": "Piso luminoso en Madrid …",
+  "result": { /* SearchResponse completo */ }
+}
+```
+
+### `GET /health`
+
+Healthcheck simple — `{"status":"ok"}`.
+
+## Variables de entorno
+
+| Variable | Valor por defecto | Notas |
+|---|---|---|
+| `SQS_ENDPOINT_URL` | `http://localhost:9324` | ElasticMQ local; vacío en cloud para usar el endpoint regional |
+| `DYNAMODB_ENDPOINT_URL` | `http://localhost:8001` | DynamoDB Local; vacío en cloud |
+| `AWS_REGION` | — | Región AWS |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | — | Credenciales (dummy en local) |
+| `QUEUE_SEARCH_REQUESTS` | `search-requests` | Cola de publicación |
+| `QUEUE_SEARCH_RESPONSES` | `search-responses` | Cola que consume el background loop |
+| `USER_SEARCHES_TABLE` | `user-searches` | Tabla DDB del historial |
+
+## Notas de implementación
+
+- En local el `lifespan` de FastAPI arranca dos cosas no bloqueantes en threads daemon: el consumer de `search-responses` y un `ensure_user_searches_table()` que crea la tabla en DDB Local si no existe.
+- En cloud no se levanta esta app — el endpoint `POST /search` es una integración SQS de API Gateway HTTP API, y los GET los sirve `results-api` (Lambda zip).
