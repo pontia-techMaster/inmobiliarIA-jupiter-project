@@ -14,6 +14,10 @@ on:
         default: dev
         options: [dev]
 
+permissions:
+  id-token: write   # OIDC for aws-actions/configure-aws-credentials
+  contents: read
+
 jobs:
   deploy:
     uses: ./.github/workflows/_deploy-service.yml
