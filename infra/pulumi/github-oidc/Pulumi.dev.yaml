@@ -5,3 +5,5 @@ config:
   # Comma-separated git refs allowed to assume the role.
   # Default: only workflow_dispatch runs from the main branch.
   github-oidc:allowed_refs: refs/heads/main
+  github-oidc:existing_provider_arn: arn:aws:iam::466577275301:oidc-provider/token.actions.githubusercontent.com
+encryptionsalt: v1:KLwP47CezmI=:v1:DM3VSSnT38H7UR5V:pAe6rUikKaOCC9Jxky2sMxuL+3PLjw==
