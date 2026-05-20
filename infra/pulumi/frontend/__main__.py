@@ -10,6 +10,7 @@ will see the dist/ has changed and re-upload.
 
 from __future__ import annotations
 
+import hashlib
 import mimetypes
 import subprocess
 import sys
@@ -17,6 +18,7 @@ from pathlib import Path
 
 import pulumi
 import pulumi_aws as aws
+import pulumi_command as command
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from _shared import default_tags, name  # noqa: E402
@@ -147,13 +149,18 @@ aws.s3.BucketPolicy(
 
 
 # ── Build + sync ──────────────────────────────────────────────────────────────
-def _sync_dist(args: tuple[str, str]) -> None:
+def _sync_dist(args: tuple[str, str]) -> str:
+    """Build, upload each file, return a hash of dist/ contents.
+
+    The returned hash becomes the trigger for the CloudFront invalidation
+    below — so we only invalidate when the assets actually change.
+    """
     api_endpoint, bucket_name = args
     _build_frontend(api_endpoint)
     if not dist_dir.exists():
         raise RuntimeError(f"build did not produce {dist_dir}")
-    # Walk dist/ and upload each file with the right content-type
-    for path in dist_dir.rglob("*"):
+    hasher = hashlib.sha256()
+    for path in sorted(dist_dir.rglob("*")):
         if not path.is_file():
             continue
         key = path.relative_to(dist_dir).as_posix()
@@ -166,9 +173,28 @@ def _sync_dist(args: tuple[str, str]) -> None:
             content_type=ctype or "application/octet-stream",
             opts=pulumi.ResourceOptions(parent=fe_bucket),
         )
+        hasher.update(key.encode())
+        hasher.update(path.read_bytes())
+    return hasher.hexdigest()
 
 
-pulumi.Output.all(api.endpoint, fe_bucket.bucket).apply(_sync_dist)
+dist_hash = pulumi.Output.all(api.endpoint, fe_bucket.bucket).apply(_sync_dist)
+
+
+# ── CloudFront invalidation (re-runs whenever dist/ changes) ─────────────────
+# Without this CloudFront keeps serving the old index.html and assets forever,
+# so users never see new deploys until the cache TTL expires.
+invalidation_cmd = pulumi.Output.format(
+    "aws cloudfront create-invalidation --distribution-id {} --paths '/*' --no-cli-pager",
+    distribution.id,
+)
+command.local.Command(
+    "fe-invalidation",
+    create=invalidation_cmd,
+    update=invalidation_cmd,
+    triggers=[dist_hash],
+    opts=pulumi.ResourceOptions(depends_on=[fe_bucket]),
+)
 
 pulumi.export("bucket_name", fe_bucket.bucket)
 pulumi.export("cloudfront_domain", distribution.domain_name)
