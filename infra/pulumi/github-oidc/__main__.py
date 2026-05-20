@@ -55,7 +55,17 @@ else:
 def _trust_policy(provider_arn: str) -> str:
     import json
 
-    subs = [f"repo:{repo}:ref:{r}" for r in allowed_refs]
+    # Each allowed_refs entry is either a branch ref ("refs/heads/main") or
+    # a pre-formed claim like "environment:dev" / "pull_request". When a job
+    # declares `environment:`, GitHub's OIDC token sets `sub` to the
+    # `environment:NAME` form instead of `ref:refs/heads/...`, so we need
+    # to allow both.
+    subs: list[str] = []
+    for entry in allowed_refs:
+        if entry.startswith(("environment:", "pull_request", "ref:")):
+            subs.append(f"repo:{repo}:{entry}")
+        else:
+            subs.append(f"repo:{repo}:ref:{entry}")
     return json.dumps(
         {
             "Version": "2012-10-17",

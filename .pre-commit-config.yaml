@@ -1,0 +1,35 @@
+# Pre-commit hooks. Mirror the checks run by .github/workflows/lint.yml so
+# CI failures are caught locally. Hooks shell out to `uv run …` to share
+# tool versions with the project's lockfile (no second pin to keep aligned).
+#
+# Install once per clone:
+#     make hooks-install
+#
+# Skip with `git commit --no-verify` / `git push --no-verify`.
+# Skip a single hook by id with `SKIP=<id> git commit …`.
+default_install_hook_types: [pre-commit, pre-push]
+
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check (autofix)
+        entry: uv run ruff check --fix
+        language: system
+        types: [python]
+        stages: [pre-commit]
+
+      - id: black
+        name: black (autoformat)
+        entry: uv run black
+        language: system
+        types: [python]
+        stages: [pre-commit]
+
+      - id: mypy
+        name: mypy (full workspace)
+        entry: uv run mypy .
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
